@@ -27,7 +27,7 @@ export default function AppSidebar() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50";
+    isActive ? "bg-muted text-primary font-medium story-link" : "hover:bg-muted/50 story-link";
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">

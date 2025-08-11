@@ -51,7 +51,7 @@ export default function AppLayout() {
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) =>
-                      `px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      `px-3 py-1.5 rounded-md text-sm transition-colors story-link ${
                         isActive ? "bg-muted text-primary" : "hover:bg-muted/60"
                       }`
                     }
@@ -64,7 +64,7 @@ export default function AppLayout() {
               <div className="ml-auto flex items-center gap-2">
                 <Badge variant="secondary" aria-label="Current plan">Free</Badge>
                 <ThemeToggle />
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="hover-scale">
                   <NavLink to="/upload">New</NavLink>
                 </Button>
                 <Button variant="ghost" size="icon" aria-label="User menu">

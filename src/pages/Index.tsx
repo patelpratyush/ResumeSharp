@@ -10,16 +10,16 @@ const Index = () => {
         <meta name="description" content="Upload your resume, paste a job description, and get ATS-friendly suggestions." />
         <link rel="canonical" href="/" />
       </Helmet>
-      <section className="text-center space-y-6">
+      <section className="text-center space-y-6 animate-fade-in">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Resume Tailor</h1>
         <p className="text-lg text-muted-foreground max-w-xl mx-auto">
           Tailor your resume to any job description with keyword coverage, ATS checks, and clean exports.
         </p>
         <div className="flex items-center gap-3 justify-center">
-          <Button asChild>
+          <Button asChild className="hover-scale">
             <Link to="/upload">Get started</Link>
           </Button>
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" asChild className="hover-scale">
             <Link to="/dashboard">View demo dashboard</Link>
           </Button>
         </div>

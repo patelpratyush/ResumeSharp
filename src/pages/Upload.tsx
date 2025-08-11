@@ -47,14 +47,14 @@ export default function Upload() {
   const jd = watch("jobDescription");
 
   return (
-    <div className="container py-6">
+    <div className="container py-8 animate-fade-in">
       <Helmet>
         <title>Upload & Analyze – Resume Tailor</title>
         <meta name="description" content="Upload your resume and paste a job description to analyze keyword coverage." />
         <link rel="canonical" href="/upload" />
       </Helmet>
 
-      <h1 className="sr-only">Upload resume and job description</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-4">Upload & Analyze</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">

@@ -51,9 +51,15 @@ export default function History() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="text-center py-16 space-y-3">
-              <div className="text-muted-foreground">No versions found</div>
-              <Button asChild>
+            <div className="text-center py-16 space-y-4">
+              <div className="flex justify-center">
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-muted-foreground">
+                  <path d="M4 6h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+              </div>
+              <div className="text-muted-foreground">No versions yet. Create one from Upload.</div>
+              <Button asChild className="hover-scale">
                 <Link to="/upload">Go to Upload</Link>
               </Button>
             </div>
@@ -97,7 +103,7 @@ export default function History() {
 
 
       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerContent>
+        <DrawerContent className="animate-slide-in-right">
           <DrawerHeader>
             <DrawerTitle>Version details</DrawerTitle>
           </DrawerHeader>

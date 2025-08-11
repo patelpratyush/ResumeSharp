@@ -13,19 +13,19 @@ export default function Dashboard() {
   const missingMust = 3;
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-8 animate-fade-in space-y-6">
       <Helmet>
         <title>Dashboard – Resume Tailor</title>
         <meta name="description" content="Keyword coverage, matched skills, and ATS snapshot for your tailored resume." />
         <link rel="canonical" href="/dashboard" />
       </Helmet>
 
-      <h1 className="sr-only">Resume Tailor Dashboard</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
 
       <section aria-label="KPIs" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="rounded-2xl shadow-soft gradient-border">
           <CardHeader className="pb-2"><CardTitle>Coverage</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="p-6 md:p-8">
             {isLoading ? (
               <Skeleton className="h-6 w-32" />
             ) : (
@@ -36,15 +36,15 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl shadow-soft gradient-border">
           <CardHeader className="pb-2"><CardTitle>Matched skills</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="p-6 md:p-8">
             {isLoading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-semibold">{matchedSkills}</div>}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl shadow-soft gradient-border">
           <CardHeader className="pb-2"><CardTitle>Missing must‑have</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="p-6 md:p-8">
             {isLoading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-semibold">{missingMust}</div>}
           </CardContent>
         </Card>
@@ -52,34 +52,34 @@ export default function Dashboard() {
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="rounded-2xl shadow-soft gradient-border">
             <CardHeader><CardTitle>Missing skills</CardTitle></CardHeader>
-            <CardContent>
+            <CardContent className="p-6 md:p-8">
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm mb-2">Must‑have</div>
+                  <div className="text-sm mb-2 text-muted-foreground">Must‑have</div>
                   <div className="flex flex-wrap gap-2">
                     {["GraphQL", "Kubernetes", "System Design"].map((s) => (
-                      <Badge key={s} variant="secondary" className="cursor-pointer" onClick={() => console.log("add", s)}>{s}</Badge>
+                      <Badge key={s} variant="secondary" className="cursor-pointer hover-scale" onClick={() => console.log("add", s)}>{s}</Badge>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm mb-2">Nice‑to‑have</div>
+                  <div className="text-sm mb-2 text-muted-foreground">Nice‑to‑have</div>
                   <div className="flex flex-wrap gap-2">
                     {["gRPC", "Terraform"].map((s) => (
-                      <Badge key={s} variant="outline" className="cursor-pointer" onClick={() => console.log("add", s)}>{s}</Badge>
+                      <Badge key={s} variant="outline" className="cursor-pointer hover-scale" onClick={() => console.log("add", s)}>{s}</Badge>
                     ))}
                   </div>
                 </div>
-                <Button size="sm" onClick={() => console.log("Add to bullets")}>Add to bullets</Button>
+                <Button size="sm" className="hover-scale" onClick={() => console.log("Add to bullets")}>Add to bullets</Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl shadow-soft gradient-border">
             <CardHeader><CardTitle>Where skills appear</CardTitle></CardHeader>
-            <CardContent>
+            <CardContent className="p-6 md:p-8">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

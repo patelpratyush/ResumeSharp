@@ -27,20 +27,21 @@ function BulletRow({ left, right }: { left: string; right: string }) {
 
 export default function Diff() {
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-8 animate-fade-in space-y-6">
+
       <Helmet>
         <title>Diff – Resume Tailor</title>
         <meta name="description" content="Compare original and tailored resume with filters and export options." />
         <link rel="canonical" href="/diff" />
       </Helmet>
 
-      <h1 className="sr-only">Resume Diff</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Diff</h1>
 
-      <Card>
+      <Card className="rounded-2xl shadow-soft gradient-border">
         <CardHeader className="sticky top-14 z-30 bg-background/80 backdrop-blur border-b">
           <CardTitle>Diff viewer</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Label>Section</Label>
@@ -58,9 +59,9 @@ export default function Diff() {
               <Switch id="onlyChanged" />
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="secondary" onClick={() => console.log("export", "pdf")}>Export PDF</Button>
-              <Button variant="secondary" onClick={() => console.log("export", "docx")}>Export DOCX</Button>
-              <Button variant="secondary" onClick={() => console.log("export", "tex")}>Export LaTeX</Button>
+              <Button variant="secondary" className="hover-scale" onClick={() => console.log("export", "pdf")}>Export PDF</Button>
+              <Button variant="secondary" className="hover-scale" onClick={() => console.log("export", "docx")}>Export DOCX</Button>
+              <Button variant="secondary" className="hover-scale" onClick={() => console.log("export", "tex")}>Export LaTeX</Button>
             </div>
           </div>
 
