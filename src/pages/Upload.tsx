@@ -70,7 +70,7 @@ export default function Upload() {
                   onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={onDrop}
-                  className={`mt-2 h-40 rounded-md border border-dashed flex items-center justify-center text-sm ${dragActive ? "bg-muted" : "bg-background"}`}
+                  className={`mt-2 h-44 rounded-2xl border border-dashed flex items-center justify-center text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-muted/40 bg-background"}`}
                   aria-label="File dropzone"
                 >
                   <div className="text-center">
@@ -80,7 +80,7 @@ export default function Upload() {
                       <div className="mt-2 inline-flex items-center gap-2">
                         <Badge variant="secondary">{(file.size / 1024).toFixed(1)} KB</Badge>
                         <span className="font-medium">{file.name}</span>
-                        <Button variant="ghost" size="sm" onClick={() => setFile(null)}>Remove</Button>
+                        <Button variant="ghost" size="sm" className="hover-scale" onClick={() => setFile(null)}>Remove</Button>
                       </div>
                     )}
                   </div>
@@ -101,8 +101,8 @@ export default function Upload() {
                 )}
 
                 <div className="mt-4 flex items-center gap-3">
-                  <Button onClick={handleSubmit(onSubmit)}>Analyze Match</Button>
-                  <Button type="button" variant="secondary" onClick={() => { reset(); setFile(null); }}>Clear</Button>
+                  <Button className="hover-scale" onClick={handleSubmit(onSubmit)}>Analyze Match</Button>
+                  <Button type="button" variant="secondary" className="hover-scale" onClick={() => { reset(); setFile(null); }}>Clear</Button>
                 </div>
 
                 <div className="mt-4">
