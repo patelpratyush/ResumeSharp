@@ -70,7 +70,7 @@ export default function Upload() {
                   onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   onDragLeave={() => setDragActive(false)}
                   onDrop={onDrop}
-                  className={`mt-2 h-40 rounded-md border border-dashed flex items-center justify-center text-sm ${dragActive ? "bg-muted" : "bg-background"}`}
+                  className={`mt-2 h-40 rounded-xl flex items-center justify-center text-sm transition-all ${dragActive ? "bg-primary/10 ring-1 ring-primary/25 shadow-md" : "bg-muted/20 hover:bg-muted/30"}`}
                   aria-label="File dropzone"
                 >
                   <div className="text-center">
