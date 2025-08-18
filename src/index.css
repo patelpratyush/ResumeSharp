@@ -74,65 +74,65 @@ All colors MUST be HSL.
 
   .dark {
     /* Improved dark theme with better contrast and warmth */
-    --background: 220 13% 9%;
-    --foreground: 210 20% 92%;
+    --background: 222 47% 6%;
+    --foreground: 210 20% 94%;
 
-    --card: 220 13% 11%;
-    --card-foreground: 210 20% 92%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 20% 94%;
 
-    --popover: 220 13% 11%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 20% 94%;
 
-    --primary: 160 84% 50%;
-    --primary-foreground: 220 13% 9%;
+    --primary: 160 84% 55%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 220 13% 18%;
-    --secondary-foreground: 210 20% 92%;
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 210 20% 94%;
 
-    --muted: 220 13% 18%;
-    --muted-foreground: 215 15% 70%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 15% 75%;
 
-    --accent: 220 13% 18%;
-    --accent-foreground: 160 84% 50%;
+    --accent: 222 47% 12%;
+    --accent-foreground: 160 84% 55%;
 
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 210 20% 92%;
+    --destructive: 0 63% 55%;
+    --destructive-foreground: 210 20% 94%;
 
-    --success: 142 71% 50%;
+    --success: 142 71% 55%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 55%;
+    --warning: 38 92% 60%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 20%;
-    --input: 220 13% 18%;
-    --ring: 160 84% 50%;
+    --border: 222 47% 15%;
+    --input: 222 47% 12%;
+    --ring: 160 60% 50%;
 
     /* Dark mode premium tokens - softer and more vibrant */
-    --primary-glow: 160 84% 60%;
-    --gradient-start: 160 84% 50%;
-    --gradient-end: 195 100% 55%;
-    --gradient-subtle: linear-gradient(135deg, hsl(160 84% 50% / 0.08), hsl(195 100% 55% / 0.08));
+    --primary-glow: 160 84% 65%;
+    --gradient-start: 160 84% 55%;
+    --gradient-end: 200 100% 60%;
+    --gradient-subtle: linear-gradient(135deg, hsl(160 84% 55% / 0.08), hsl(200 100% 60% / 0.08));
     
     /* Dark glass effect with better transparency */
-    --glass-bg: 220 13% 11% / 0.8;
-    --glass-border: 220 13% 20% / 0.5;
+    --glass-bg: 222 47% 8% / 0.8;
+    --glass-border: 222 47% 15% / 0.5;
     
     /* Dark shadows */
-    --shadow-soft: 0 2px 8px -1px hsl(222 84% 0% / 0.3), 0 1px 3px -1px hsl(222 84% 0% / 0.2);
-    --shadow-medium: 0 4px 16px -4px hsl(222 84% 0% / 0.4), 0 2px 6px -2px hsl(222 84% 0% / 0.2);
-    --shadow-large: 0 12px 32px -8px hsl(222 84% 0% / 0.5), 0 4px 12px -4px hsl(222 84% 0% / 0.3);
+    --shadow-soft: 0 2px 8px -1px hsl(222 84% 0% / 0.4), 0 1px 3px -1px hsl(222 84% 0% / 0.3);
+    --shadow-medium: 0 4px 16px -4px hsl(222 84% 0% / 0.5), 0 2px 6px -2px hsl(222 84% 0% / 0.3);
+    --shadow-large: 0 12px 32px -8px hsl(222 84% 0% / 0.6), 0 4px 12px -4px hsl(222 84% 0% / 0.4);
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
 
     /* Dark sidebar */
-    --sidebar-background: 222 84% 3%;
+    --sidebar-background: 222 47% 5%;
     --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 84% 4%;
-    --sidebar-accent: 217 33% 17%;
+    --sidebar-primary: 160 84% 55%;
+    --sidebar-primary-foreground: 222 47% 5%;
+    --sidebar-accent: 222 47% 10%;
     --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 222 47% 15%;
+    --sidebar-ring: 160 84% 55%;
   }
 }
 

@@ -23,7 +23,7 @@ export default function Dashboard() {
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
 
       <section aria-label="KPIs" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="rounded-2xl shadow-soft gradient-border">
+        <Card className="surface-smooth">
           <CardHeader className="pb-2"><CardTitle>Coverage</CardTitle></CardHeader>
           <CardContent className="p-6 md:p-8">
             {isLoading ? (
@@ -36,13 +36,13 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        <Card className="rounded-2xl shadow-soft gradient-border">
+        <Card className="surface-smooth">
           <CardHeader className="pb-2"><CardTitle>Matched skills</CardTitle></CardHeader>
           <CardContent className="p-6 md:p-8">
             {isLoading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-semibold">{matchedSkills}</div>}
           </CardContent>
         </Card>
-        <Card className="rounded-2xl shadow-soft gradient-border">
+        <Card className="surface-smooth">
           <CardHeader className="pb-2"><CardTitle>Missing must‑have</CardTitle></CardHeader>
           <CardContent className="p-6 md:p-8">
             {isLoading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-semibold">{missingMust}</div>}
@@ -52,7 +52,7 @@ export default function Dashboard() {
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-2xl shadow-soft gradient-border">
+          <Card className="surface-smooth">
             <CardHeader><CardTitle>Missing skills</CardTitle></CardHeader>
             <CardContent className="p-6 md:p-8">
               <div className="space-y-4">
@@ -77,7 +77,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl shadow-soft gradient-border">
+          <Card className="surface-smooth">
             <CardHeader><CardTitle>Where skills appear</CardTitle></CardHeader>
             <CardContent className="p-6 md:p-8">
               <div className="overflow-x-auto">
@@ -93,7 +93,7 @@ export default function Dashboard() {
                       { skill: "React", where: "Summary, Project A" },
                       { skill: "TypeScript", where: "Experience, Project B" },
                     ].map((r) => (
-                      <tr key={r.skill} className="border-b last:border-0">
+                      <tr key={r.skill} className="border-b border-border/50 last:border-0">
                         <td className="py-2">{r.skill}</td>
                         <td className="py-2 text-muted-foreground">{r.where}</td>
                       </tr>
