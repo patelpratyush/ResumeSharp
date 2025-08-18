@@ -226,11 +226,11 @@ All colors MUST be HSL.
   
   /* Smooth surfaces */
   .surface-smooth {
-    @apply backdrop-blur-sm bg-card/60 border-0 shadow-soft;
+    @apply backdrop-blur-sm bg-card/60 border border-border/30 shadow-soft rounded-xl;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .surface-smooth:hover {
-    @apply shadow-medium bg-card/80;
+    @apply shadow-medium bg-card/80 border-border/50;
     transform: translateY(-1px);
   }
 
