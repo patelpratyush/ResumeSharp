@@ -31,8 +31,9 @@ const Index = () => {
         
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-end/10 blur-3xl animate-pulse delay-1000" />
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl smooth-bounce" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-end/10 blur-3xl smooth-bounce delay-1000" />
+          <div className="absolute top-1/3 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-pulse delay-500" />
         </div>
 
         <div className="relative z-10 text-center space-y-8 px-4 max-w-4xl mx-auto">
@@ -121,9 +122,9 @@ const Index = () => {
                 delay: "delay-200"
               }
             ].map((feature, index) => (
-              <Card key={index} className={`hover-lift glass border-0 shadow-medium ${feature.delay} stagger-fade-in`}>
+              <Card key={index} className={`surface-smooth ${feature.delay} stagger-fade-in group`}>
                 <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-all duration-300 group-hover:bg-primary/20">
                     {feature.icon}
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -172,7 +173,7 @@ const Index = () => {
             ].map((step, index) => (
               <div key={index} className="text-center space-y-4 group">
                 <div className="relative">
-                  <div className="w-20 h-20 mx-auto rounded-full gradient-primary flex items-center justify-center text-white shadow-glow group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-20 h-20 mx-auto rounded-full gradient-primary flex items-center justify-center text-white shadow-glow group-hover:scale-110 hover-float transition-all duration-500">
                     {step.icon}
                   </div>
                   <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-background border-2 border-primary flex items-center justify-center text-xs font-bold text-primary">

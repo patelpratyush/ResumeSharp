@@ -140,11 +140,13 @@ All colors MUST be HSL.
   /* Animation utilities */
   .hover-scale { @apply transition-all duration-300 ease-out hover:scale-105; }
   .hover-lift { @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg; }
+  .hover-float { @apply transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-xl; }
   .fade-in { animation: fadeIn 0.5s ease-out; }
   .slide-in-from-bottom { animation: slideInFromBottom 0.5s ease-out; }
   .slide-in-from-left { animation: slideInFromLeft 0.5s ease-out; }
   .slide-in-from-right { animation: slideInFromRight 0.5s ease-out; }
   .stagger-fade-in { animation: fadeInStagger 0.6s ease-out forwards; }
+  .smooth-bounce { animation: smoothBounce 3s ease-in-out infinite; }
 
   /* Glass morphism */
   .glass {
@@ -204,6 +206,11 @@ All colors MUST be HSL.
   .btn-glow {
     @apply relative overflow-hidden;
     box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-glow:hover {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.5), 0 8px 32px hsl(var(--primary) / 0.2);
+    transform: translateY(-2px);
   }
   .btn-glow::before {
     content: "";
@@ -215,6 +222,16 @@ All colors MUST be HSL.
   }
   .btn-glow:hover::before {
     left: 100%;
+  }
+  
+  /* Smooth surfaces */
+  .surface-smooth {
+    @apply backdrop-blur-sm bg-card/60 border-0 shadow-soft;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .surface-smooth:hover {
+    @apply shadow-medium bg-card/80;
+    transform: translateY(-1px);
   }
 
   /* Page transitions */
@@ -288,6 +305,24 @@ All colors MUST be HSL.
   }
   50% {
     box-shadow: 0 0 30px hsl(var(--primary) / 0.5);
+  }
+}
+
+@keyframes smoothBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes smoothFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
   }
 }
 

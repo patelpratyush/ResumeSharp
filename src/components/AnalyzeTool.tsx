@@ -404,8 +404,8 @@ export default function AnalyzeTool() {
                         <div className="space-y-2">
                             <div className="text-sm font-medium">Experience</div>
                             <div className="space-y-4">
-                                {(state.resume?.experience ?? []).map((role, roleIdx) => (
-                                    <div key={roleIdx} className="border rounded-lg p-4">
+                                 {(state.resume?.experience ?? []).map((role, roleIdx) => (
+                                     <div key={roleIdx} className="rounded-xl bg-card/50 backdrop-blur p-6 shadow-soft hover:shadow-medium transition-all duration-300">
                                         <div className="mb-3">
                                             <div className="font-medium text-lg">{role.role || "Role"}</div>
                                             <div className="text-sm text-muted-foreground">
@@ -421,8 +421,8 @@ export default function AnalyzeTool() {
                                             {(role.bullets ?? []).map((b, bulletIdx) => (
                                                 <li key={bulletIdx} className="flex items-start gap-2">
                                                     <span className="mt-2">•</span>
-                                                    <div className="flex-1">
-                                                        <div className="rounded-md border p-3">{b}</div>
+                                                     <div className="flex-1">
+                                                         <div className="rounded-xl bg-muted/30 p-4 backdrop-blur transition-all duration-200 hover:bg-muted/40">{b}</div>
                                                         <div className="mt-2">
                                                             <RewriteDrawer
                                                                 analysisId={state.analysis.analysis_id}
@@ -451,8 +451,8 @@ export default function AnalyzeTool() {
                                             {(p.bullets || []).map((b, bi) => (
                                                 <div key={bi} className="flex items-start gap-2 mt-1">
                                                     <span className="mt-2">•</span>
-                                                    <div className="flex-1">
-                                                        <div className="rounded-md border p-3">{b}</div>
+                                                     <div className="flex-1">
+                                                         <div className="rounded-xl bg-muted/30 p-4 backdrop-blur transition-all duration-200 hover:bg-muted/40">{b}</div>
                                                         <div className="mt-2">
                                                             <RewriteDrawer
                                                                 analysisId={state.analysis!.analysis_id}
@@ -488,7 +488,7 @@ export default function AnalyzeTool() {
                                                 {(items as string[]).map((line, idx) => (
                                                     <li key={idx} className="flex items-start gap-2">
                                                         <span className="mt-2">•</span>
-                                                        <div className="flex-1 rounded-md border p-3">{line}</div>
+                                                        <div className="flex-1 rounded-xl bg-muted/30 p-4 backdrop-blur transition-all duration-200 hover:bg-muted/40">{line}</div>
                                                     </li>
                                                 ))}
                                             </ul>

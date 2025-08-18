@@ -17,6 +17,7 @@ export type Resume = {
   }>;
   projects?: Array<{ name: string; bullets: string[] }> | null;
   education?: Array<{ school: string; degree: string; grad: string }> | null;
+  other_sections?: Record<string, string[]> | null;
 };
 
 export type JD = {
@@ -35,6 +36,8 @@ export type AnalyzeResp = {
   metrics: Record<string, number>;
   heatmap: Array<{ term: string; in_resume: boolean; occurrences: number }>;
   suggestions: Record<string, string[]>;
+  ats?: any;
+  hygiene_flags?: any;
 };
 
 const base = "";
