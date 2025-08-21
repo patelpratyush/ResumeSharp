@@ -27,3 +27,7 @@ gunicorn==21.2.0
 
 # Configuration
 python-dotenv==1.0.0
+
+# Subscription & Payment Processing
+stripe==5.5.0
+supabase==1.0.3
