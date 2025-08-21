@@ -1,13 +1,23 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-// Badge import removed
 import { Button } from "@/components/ui/button";
-// Avatar and dropdown imports removed
 import { Helmet } from "react-helmet-async";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import ThemeToggle from "@/components/ThemeToggle";
+import { toast } from "sonner";
 
 export default function AppLayout() {
   const location = useLocation();
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      toast.error("Error signing out");
+    }
+  };
 
   return (
     <>
@@ -88,6 +98,16 @@ export default function AppLayout() {
                 <NavLink to="/settings">
                   <Settings className="h-4 w-4" />
                 </NavLink>
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleSignOut}
+                className="hover-scale"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>

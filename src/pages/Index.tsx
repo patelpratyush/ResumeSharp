@@ -1,6 +1,6 @@
-import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -15,11 +15,11 @@ import {
   TrendingUp
 } from "lucide-react";
 
-const Index = () => {
+export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>TailorFlow – AI-Powered Resume Optimization</title>
+        <title>Resume Tailor – AI-Powered Resume Optimization</title>
         <meta name="description" content="Transform your resume with AI-powered keyword optimization, ATS compliance checks, and instant tailoring for any job description." />
         <link rel="canonical" href="/" />
       </Helmet>
@@ -60,14 +60,14 @@ const Index = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center slide-in-from-bottom delay-200">
             <Button asChild size="lg" className="btn-glow px-8 py-3 text-lg font-semibold group">
-              <Link to="/upload">
-                Start Optimizing
+              <Link to="/auth">
+                Get Started
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild className="hover-lift px-8 py-3 text-lg">
-              <Link to="/dashboard">
-                View Demo
+              <Link to="/auth">
+                Sign In
               </Link>
             </Button>
           </div>
@@ -84,7 +84,7 @@ const Index = () => {
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-4 w-4 text-green-500" />
               <span>98% success rate</span>
             </div>
           </div>
@@ -95,7 +95,7 @@ const Index = () => {
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">Why Choose TailorFlow?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Why Choose Resume Tailor?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Powered by advanced AI and designed for modern job seekers
             </p>
@@ -198,25 +198,23 @@ const Index = () => {
               Ready to Land Your Dream Job?
             </h2>
             <p className="text-lg text-muted-foreground">
-              Join thousands of successful job seekers who've optimized their resumes with TailorFlow
+              Join thousands of successful job seekers who've optimized their resumes with Resume Tailor
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
             <Button asChild size="lg" className="btn-glow px-12 py-4 text-lg font-semibold group">
-              <Link to="/upload">
+              <Link to="/auth">
                 Start Free Today
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
             <div className="text-sm text-muted-foreground">
-              No registration required • Free forever
+              No credit card required • Always free
             </div>
           </div>
         </div>
       </section>
     </div>
   );
-};
-
-export default Index;
+}
