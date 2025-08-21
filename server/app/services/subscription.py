@@ -4,9 +4,8 @@ Subscription management service
 import stripe
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+from supabase import create_client, Client
 from ..config import PlanTier, get_plan_config, get_api_limit
-from ..database import get_db
 import os
 
 # Configure Stripe
@@ -14,8 +13,11 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 class SubscriptionService:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
+        self.supabase: Client = create_client(
+            os.getenv("SUPABASE_URL"),
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        )
     
     async def create_checkout_session(
         self, 

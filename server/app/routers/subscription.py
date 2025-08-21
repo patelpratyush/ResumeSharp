@@ -10,8 +10,6 @@ import json
 from ..services.subscription import SubscriptionService
 from ..config import PlanTier, get_plan_comparison
 from ..middleware.usage_limiter import get_user_id_from_token, check_api_limit_no_increment
-from ..database import get_db
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/subscription", tags=["subscription"])
 
@@ -39,11 +37,11 @@ async def get_subscription_plans():
 @router.get("/status")
 async def get_subscription_status(
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Get current subscription status for user"""
     try:
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         status = await subscription_service.get_subscription_status(user_id)
         
         # Also get current usage
@@ -61,7 +59,7 @@ async def get_subscription_status(
 async def create_checkout_session(
     request: CreateCheckoutRequest,
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Create Stripe checkout session for subscription upgrade"""
     try:
@@ -75,7 +73,7 @@ async def create_checkout_session(
         if request.billing_cycle not in ["monthly", "yearly"]:
             raise HTTPException(status_code=400, detail="Invalid billing cycle")
         
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         checkout_session = await subscription_service.create_checkout_session(
             user_id=user_id,
             plan_tier=plan_tier,
@@ -97,11 +95,11 @@ async def create_checkout_session(
 async def create_customer_portal(
     request: CreatePortalRequest,
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Create Stripe customer portal session for subscription management"""
     try:
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         portal_url = await subscription_service.create_customer_portal_session(
             user_id=user_id,
             return_url=request.return_url
@@ -118,11 +116,11 @@ async def create_customer_portal(
 @router.post("/cancel")
 async def cancel_subscription(
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Cancel subscription at period end"""
     try:
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         success = await subscription_service.cancel_subscription(user_id)
         
         return {
@@ -137,11 +135,11 @@ async def cancel_subscription(
 @router.post("/reactivate")
 async def reactivate_subscription(
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Reactivate a cancelled subscription"""
     try:
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         success = await subscription_service.reactivate_subscription(user_id)
         
         return {
@@ -154,7 +152,7 @@ async def reactivate_subscription(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+async def stripe_webhook(request: Request, ):
     """Handle Stripe webhooks"""
     try:
         # Get raw body and signature
@@ -164,7 +162,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         if not signature:
             raise HTTPException(status_code=400, detail="Missing stripe-signature header")
         
-        subscription_service = SubscriptionService(db)
+        subscription_service = SubscriptionService()
         await subscription_service.handle_webhook_event(payload, signature)
         
         return {"success": True}
@@ -197,7 +195,7 @@ async def get_usage_details(
 async def verify_checkout_session(
     session_id: str,
     user_id: str = Depends(get_user_id_from_token),
-    db: Session = Depends(get_db)
+    
 ):
     """Verify completed checkout session"""
     try:
