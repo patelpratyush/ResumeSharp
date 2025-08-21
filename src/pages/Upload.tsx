@@ -5,7 +5,7 @@ export default function Upload() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Upload & Analyze – TailorFlow</title>
+        <title>Upload & Analyze – ResumeSharp</title>
         <meta name="description" content="Upload your resume and paste a job description to analyze keyword coverage with AI-powered insights." />
         <link rel="canonical" href="/upload" />
       </Helmet>

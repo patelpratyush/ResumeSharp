@@ -22,14 +22,14 @@ export default function AppLayout() {
   return (
     <>
       <Helmet>
-        <title>TailorFlow – AI-Powered Resume Optimization</title>
+        <title>ResumeSharp – AI-Powered Resume Optimization</title>
         <meta name="description" content="Transform your resume with AI-powered keyword optimization, ATS compliance checks, and instant tailoring." />
         <link rel="canonical" href={location.pathname} />
         <meta name="robots" content="index,follow" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "TailorFlow",
+          name: "ResumeSharp",
           applicationCategory: "BusinessApplication",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }
         })}</script>
@@ -45,7 +45,7 @@ export default function AppLayout() {
                 <span className="text-lg font-bold gradient-text">T</span>
               </div>
               <span className="font-bold text-xl tracking-tight gradient-text">
-                TailorFlow
+                ResumeSharp
               </span>
             </NavLink>
 
@@ -125,7 +125,7 @@ export default function AppLayout() {
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <span>Built with</span>
                 <span className="text-red-500">♥</span>
-                <span>by TailorFlow</span>
+                <span>by ResumeSharp</span>
               </div>
             </div>
           </footer>

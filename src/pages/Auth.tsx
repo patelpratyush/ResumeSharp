@@ -145,8 +145,8 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 dark:to-muted/20 flex items-center justify-center p-4 relative">
       <Helmet>
-        <title>Sign In – Resume Tailor</title>
-        <meta name="description" content="Sign in to your Resume Tailor account to access personalized resume optimization tools." />
+        <title>Sign In – ResumeSharp</title>
+        <meta name="description" content="Sign in to your ResumeSharp account to access personalized resume optimization tools." />
         <link rel="canonical" href="/auth" />
       </Helmet>
 
@@ -158,7 +158,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Resume Tailor
+            ResumeSharp
           </h1>
           <p className="text-muted-foreground mt-2">
             Optimize your resume for every job application

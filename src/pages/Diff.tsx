@@ -30,7 +30,7 @@ export default function Diff() {
     <div className="container py-8 animate-fade-in space-y-6">
 
       <Helmet>
-        <title>Diff – Resume Tailor</title>
+        <title>Diff – ResumeSharp</title>
         <meta name="description" content="Compare original and tailored resume with filters and export options." />
         <link rel="canonical" href="/diff" />
       </Helmet>

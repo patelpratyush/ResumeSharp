@@ -1,6 +1,6 @@
-# Resume Tailor - AI Resume Optimization
+# ResumeSharp - AI Resume Optimization
 
-A full-stack AI-powered application that helps job seekers optimize their resumes for specific job descriptions with ATS-friendly insights, smart suggestions, and a complete subscription system.
+A full-stack AI-powered application that helps job seekers sharpen their resumes for specific job descriptions with ATS-friendly insights, smart suggestions, and a complete subscription system.
 
 ## 🚀 Features
 
@@ -47,7 +47,7 @@ A full-stack AI-powered application that helps job seekers optimize their resume
 ## 📁 Project Structure
 
 ```
-tailor-flow-ui/
+resumesharp/
 ├── src/                          # Frontend React application
 │   ├── components/               # Reusable UI components
 │   │   ├── ui/                  # shadcn/ui components
@@ -105,7 +105,7 @@ tailor-flow-ui/
 ```bash
 # Clone the repository
 git clone <your-repository-url>
-cd tailor-flow-ui
+cd resumesharp
 
 # Install frontend dependencies
 npm install
@@ -149,7 +149,7 @@ MAX_UPLOAD_SIZE_MB=10
 ### 3. Database Setup
 
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Run the following SQL to set up user profiles:
+2. Run the following SQL to set up user profiles for ResumeSharp:
 
 ```sql
 -- Create user_profiles table
@@ -208,7 +208,7 @@ CREATE POLICY "Users can update own profile" ON user_profiles
 ```bash
 # Terminal 1: Start backend server
 cd server
-PYTHONPATH=/Users/your-username/path/to/tailor-flow-ui/server python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+PYTHONPATH=/Users/your-username/path/to/resumesharp/server python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Terminal 2: Start frontend server
 npm run dev
@@ -254,22 +254,85 @@ pytest
 
 ## 🚀 Deployment
 
-### Frontend (Vercel/Netlify)
-```bash
-npm run build
-# Deploy the 'dist' folder
+### **Step 1: Deploy Backend First**
+
+**Railway (Recommended):**
+1. Go to [railway.app](https://railway.app)
+2. Connect your GitHub repository
+3. Select the `/server` directory as the root
+4. Add environment variables:
+   ```env
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   OPENAI_API_KEY=your_openai_api_key
+   STRIPE_SECRET_KEY=sk_live_...
+   STRIPE_PUBLISHABLE_KEY=pk_live_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   DEBUG_MODE=false
+   ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app
+   FRONTEND_URL=https://your-frontend-domain.vercel.app
+   ```
+5. Deploy and copy the backend URL (e.g., `https://your-app.railway.app`)
+
+### **Step 2: Deploy Frontend**
+
+**Vercel (Recommended):**
+1. Go to [vercel.com](https://vercel.com)
+2. Connect your GitHub repository
+3. **Set Environment Variables:**
+   ```env
+   VITE_API_URL=https://your-backend-domain.railway.app
+   ```
+4. **Build Settings:**
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+
+**Netlify:**
+1. Go to [netlify.com](https://netlify.com)
+2. Connect your GitHub repository
+3. **Build Settings:**
+   - Build Command: `npm run build`
+   - Publish Directory: `dist`
+4. **Environment Variables:**
+   ```env
+   VITE_API_URL=https://your-backend-domain.railway.app
+   ```
+
+### **Step 3: Update Webhook URL**
+- Go to Stripe Dashboard → Webhooks
+- Update endpoint URL to: `https://your-backend-domain.railway.app/api/subscription/webhook`
+
+### **Alternative: Full-Stack on Vercel**
+Create `vercel.json`:
+```json
+{
+  "builds": [
+    {
+      "src": "server/app/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server/app/main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "/api"
+  }
+}
 ```
-
-### Backend (Railway/Heroku/DigitalOcean)
-- Set environment variables
-- Use `gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
-- Ensure webhook URL points to live domain
-
-### Environment Variables for Production
-- Set `DEBUG_MODE=false`
-- Set `ALLOWED_ORIGINS` to your domain
-- Update `FRONTEND_URL` to production URL
-- Configure webhook endpoint in Stripe
 
 ## 📄 API Documentation
 

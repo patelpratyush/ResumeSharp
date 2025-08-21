@@ -2,7 +2,7 @@
 
 ## Overview
 
-I've built a complete subscription system for your Resume Tailor app with three tiers:
+I've built a complete subscription system for your ResumeSharp app with three tiers:
 
 - **Free**: 5 API calls/month
 - **Pro**: 100 API calls/month ($19/month or $190/year)

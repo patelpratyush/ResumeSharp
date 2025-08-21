@@ -76,7 +76,7 @@ export default function Pricing() {
   return (
     <div className="container py-8 animate-fade-in">
       <Helmet>
-        <title>Pricing – Resume Tailor</title>
+        <title>Pricing – ResumeSharp</title>
         <meta name="description" content="Choose the perfect plan for your resume optimization needs. Start free or upgrade for advanced features." />
         <link rel="canonical" href="/pricing" />
       </Helmet>

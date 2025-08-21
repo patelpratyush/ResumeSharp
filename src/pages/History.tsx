@@ -134,13 +134,13 @@ export default function History() {
   return (
     <div className="container py-6 space-y-6">
       <Helmet>
-        <title>History – Resume Tailor</title>
+        <title>History – ResumeSharp</title>
         <meta name="description" content="View previous tailored versions with scores and coverage." />
         <link rel="canonical" href="/history" />
       </Helmet>
 
 
-      <h1 className="sr-only">Resume Tailor History</h1>
+      <h1 className="sr-only">ResumeSharp History</h1>
 
       <Card>
         <CardHeader><CardTitle>Version history</CardTitle></CardHeader>

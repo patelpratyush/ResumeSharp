@@ -23,7 +23,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background relative">
       <Helmet>
-        <title>Resume Tailor – AI-Powered Resume Optimization</title>
+        <title>ResumeSharp – AI-Powered Resume Optimization</title>
         <meta name="description" content="Transform your resume with AI-powered keyword optimization, ATS compliance checks, and instant tailoring for any job description." />
         <link rel="canonical" href="/" />
       </Helmet>
@@ -31,7 +31,7 @@ export default function Index() {
       {/* Header with navigation */}
       <header className="absolute top-0 left-0 right-0 p-4 z-50">
         <nav className="container flex items-center justify-between">
-          <div className="font-bold text-xl">Resume Tailor</div>
+          <div className="font-bold text-xl">ResumeSharp</div>
           <div className="flex items-center gap-6">
             <Link to="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
               Pricing
@@ -115,7 +115,7 @@ export default function Index() {
       <section className="py-24 px-4 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Why Choose Resume Tailor?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Why Choose ResumeSharp?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Powered by advanced AI and designed for modern job seekers
             </p>
@@ -365,7 +365,7 @@ export default function Index() {
               Ready to Land Your Dream Job?
             </h2>
             <p className="text-lg text-muted-foreground">
-              Join thousands of successful job seekers who've optimized their resumes with Resume Tailor
+              Join thousands of successful job seekers who've sharpened their resumes with ResumeSharp
             </p>
           </div>
 

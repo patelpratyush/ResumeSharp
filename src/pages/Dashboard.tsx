@@ -125,7 +125,7 @@ export default function Dashboard() {
   return (
     <div className="container py-8 animate-fade-in space-y-6">
       <Helmet>
-        <title>Dashboard – Resume Tailor</title>
+        <title>Dashboard – ResumeSharp</title>
         <meta name="description" content="Keyword coverage, matched skills, and ATS snapshot for your tailored resume." />
         <link rel="canonical" href="/dashboard" />
       </Helmet>

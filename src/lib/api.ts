@@ -62,7 +62,7 @@ export type CanonicalAnalyzeResp = {
   hygiene_flags?: string[];
 };
 
-const base = "http://localhost:8000";
+const base = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 type ApiError = {
   error: string;

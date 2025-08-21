@@ -355,7 +355,7 @@ export default function Settings() {
   return (
     <div className="container py-8 animate-fade-in space-y-6">
       <Helmet>
-        <title>Settings – Resume Tailor</title>
+        <title>Settings – ResumeSharp</title>
         <meta name="description" content="Manage profile, billing, usage, and data retention settings." />
         <link rel="canonical" href="/settings" />
       </Helmet>
