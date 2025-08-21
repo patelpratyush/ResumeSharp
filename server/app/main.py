@@ -25,7 +25,7 @@ from .error_handler import (
 from .config import config
 from .security import validate_upload_security, auth_dependency
 # Auth and database imports removed
-from .middleware_old import (
+from .request_middleware import (
     request_tracking_middleware, limiter, rate_limit_handler,
     get_rate_limit, get_upload_rate_limit, get_compute_rate_limit
 )
