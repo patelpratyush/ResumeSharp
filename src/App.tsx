@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Diff from "./pages/Diff";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AnalyzeScreen from "./components/AnalyzeScreen";
@@ -31,6 +32,7 @@ const App = () => (
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/pricing" element={<Pricing />} />
               
               {/* Protected routes */}
               <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}> 

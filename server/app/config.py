@@ -113,3 +113,153 @@ class Config:
 
 # Global config instance
 config = Config()
+
+# Subscription Plans Configuration
+from typing import List
+from enum import Enum
+
+class PlanTier(str, Enum):
+    FREE = "free"
+    PRO = "pro"
+    ULTIMATE = "ultimate"
+
+class PlanFeature(str, Enum):
+    # Core features
+    RESUME_ANALYSIS = "resume_analysis"
+    ATS_OPTIMIZATION = "ats_optimization"
+    BULLET_REWRITING = "bullet_rewriting"
+    EXPORT_DOCX = "export_docx"
+    
+    # Premium features
+    BATCH_REWRITE = "batch_rewrite"
+    ADVANCED_ANALYTICS = "advanced_analytics"
+    PRIORITY_SUPPORT = "priority_support"
+    CUSTOM_TEMPLATES = "custom_templates"
+    API_ACCESS = "api_access"
+    TEAM_COLLABORATION = "team_collaboration"
+
+SUBSCRIPTION_PLANS = {
+    PlanTier.FREE: {
+        "name": "Free",
+        "description": "Perfect for getting started",
+        "price_monthly": 0,
+        "price_yearly": 0,
+        "stripe_price_id_monthly": None,
+        "stripe_price_id_yearly": None,
+        "api_calls_limit": 5,
+        "features": [
+            PlanFeature.RESUME_ANALYSIS,
+            PlanFeature.ATS_OPTIMIZATION,
+            PlanFeature.EXPORT_DOCX,
+        ],
+        "feature_limits": {
+            "resumes_stored": 3,
+            "job_descriptions_stored": 10,
+            "analysis_history_days": 30,
+        }
+    },
+    
+    PlanTier.PRO: {
+        "name": "Pro",
+        "description": "For serious job seekers",
+        "price_monthly": 19,
+        "price_yearly": 190,  # 2 months free
+        "stripe_price_id_monthly": "price_1RygWs2LCeqGc1KEyimKNF7k",
+        "stripe_price_id_yearly": "price_1RygWs2LCeqGc1KERBDeZbVd",
+        "api_calls_limit": 100,
+        "features": [
+            PlanFeature.RESUME_ANALYSIS,
+            PlanFeature.ATS_OPTIMIZATION,
+            PlanFeature.BULLET_REWRITING,
+            PlanFeature.BATCH_REWRITE,
+            PlanFeature.EXPORT_DOCX,
+            PlanFeature.ADVANCED_ANALYTICS,
+            PlanFeature.CUSTOM_TEMPLATES,
+        ],
+        "feature_limits": {
+            "resumes_stored": 25,
+            "job_descriptions_stored": 100,
+            "analysis_history_days": 365,
+            "custom_templates": 10,
+        }
+    },
+    
+    PlanTier.ULTIMATE: {
+        "name": "Ultimate",
+        "description": "For power users and professionals",
+        "price_monthly": 49,
+        "price_yearly": 490,  # 2 months free
+        "stripe_price_id_monthly": "price_1RygXU2LCeqGc1KEjBFEwCNg",
+        "stripe_price_id_yearly": "price_1RygXm2LCeqGc1KELIWzKh0Q",
+        "api_calls_limit": 1000,
+        "features": [
+            PlanFeature.RESUME_ANALYSIS,
+            PlanFeature.ATS_OPTIMIZATION,
+            PlanFeature.BULLET_REWRITING,
+            PlanFeature.BATCH_REWRITE,
+            PlanFeature.EXPORT_DOCX,
+            PlanFeature.ADVANCED_ANALYTICS,
+            PlanFeature.PRIORITY_SUPPORT,
+            PlanFeature.CUSTOM_TEMPLATES,
+            PlanFeature.API_ACCESS,
+            PlanFeature.TEAM_COLLABORATION,
+        ],
+        "feature_limits": {
+            "resumes_stored": -1,  # Unlimited
+            "job_descriptions_stored": -1,  # Unlimited
+            "analysis_history_days": -1,  # Unlimited
+            "custom_templates": -1,  # Unlimited
+            "team_members": 5,
+        }
+    }
+}
+
+def get_plan_config(tier: PlanTier) -> Dict:
+    """Get configuration for a specific plan tier"""
+    return SUBSCRIPTION_PLANS.get(tier, SUBSCRIPTION_PLANS[PlanTier.FREE])
+
+def get_plan_features(tier: PlanTier) -> List[PlanFeature]:
+    """Get list of features for a specific plan tier"""
+    plan = get_plan_config(tier)
+    return plan.get("features", [])
+
+def has_feature(tier: PlanTier, feature: PlanFeature) -> bool:
+    """Check if a plan tier has a specific feature"""
+    features = get_plan_features(tier)
+    return feature in features
+
+def get_api_limit(tier: PlanTier) -> int:
+    """Get API call limit for a specific plan tier"""
+    plan = get_plan_config(tier)
+    return plan.get("api_calls_limit", 0)
+
+def get_feature_limit(tier: PlanTier, feature_name: str, default: int = 0) -> int:
+    """Get limit for a specific feature"""
+    plan = get_plan_config(tier)
+    limits = plan.get("feature_limits", {})
+    return limits.get(feature_name, default)
+
+def can_upgrade_to(current_tier: PlanTier, target_tier: PlanTier) -> bool:
+    """Check if user can upgrade from current tier to target tier"""
+    tier_order = [PlanTier.FREE, PlanTier.PRO, PlanTier.ULTIMATE]
+    try:
+        current_idx = tier_order.index(current_tier)
+        target_idx = tier_order.index(target_tier)
+        return target_idx > current_idx
+    except ValueError:
+        return False
+
+def get_plan_comparison() -> Dict:
+    """Get comparison data for all plans"""
+    comparison = {}
+    for tier, config in SUBSCRIPTION_PLANS.items():
+        comparison[tier.value] = {
+            "name": config["name"],
+            "description": config["description"],
+            "price_monthly": config["price_monthly"],
+            "price_yearly": config["price_yearly"],
+            "api_calls_limit": config["api_calls_limit"],
+            "features": [f.value for f in config["features"]],
+            "popular": tier == PlanTier.PRO,  # Mark Pro as popular
+        }
+    return comparison

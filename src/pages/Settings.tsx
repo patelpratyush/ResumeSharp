@@ -161,21 +161,54 @@ export default function Settings() {
     }
   };
 
-  // Upgrade plan (placeholder for future implementation)
-  const upgradePlan = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Upgrade functionality will be available soon!",
-    });
+  // Upgrade/manage plan
+  const upgradePlan = async () => {
+    if (!user) return;
+
+    try {
+      if (userProfile?.subscription_tier === 'Free') {
+        // Redirect to pricing page for upgrades
+        navigate('/pricing');
+      } else {
+        // Open Stripe customer portal for existing subscribers
+        const { subscriptionAPI } = await import('@/lib/subscription');
+        const { portal_url } = await subscriptionAPI.createCustomerPortal();
+        window.open(portal_url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error managing subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open subscription management. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Cancel subscription (placeholder for future implementation)
+  // Cancel subscription
   const cancelSubscription = async () => {
-    setCancelSubConfirm(false);
-    toast({
-      title: "Subscription Cancelled",
-      description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
-    });
+    if (!user) return;
+
+    try {
+      const { subscriptionAPI } = await import('@/lib/subscription');
+      await subscriptionAPI.cancelSubscription();
+      
+      setCancelSubConfirm(false);
+      toast({
+        title: "Subscription Cancelled",
+        description: "Your subscription will be cancelled at the end of your billing period.",
+      });
+      
+      // Reload user data to reflect changes
+      window.location.reload();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Delete account

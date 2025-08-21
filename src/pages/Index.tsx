@@ -13,7 +13,10 @@ import {
   Sparkles,
   ArrowRight,
   Star,
-  TrendingUp
+  TrendingUp,
+  Crown,
+  Users,
+  Check
 } from "lucide-react";
 
 export default function Index() {
@@ -25,9 +28,20 @@ export default function Index() {
         <link rel="canonical" href="/" />
       </Helmet>
 
-      {/* Header with theme toggle */}
-      <header className="absolute top-0 right-0 p-4 z-50">
-        <ThemeToggle />
+      {/* Header with navigation */}
+      <header className="absolute top-0 left-0 right-0 p-4 z-50">
+        <nav className="container flex items-center justify-between">
+          <div className="font-bold text-xl">Resume Tailor</div>
+          <div className="flex items-center gap-6">
+            <Link to="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
+              Pricing
+            </Link>
+            <Link to="/auth" className="text-sm font-medium hover:text-primary transition-colors">
+              Sign In
+            </Link>
+            <ThemeToggle />
+          </div>
+        </nav>
       </header>
 
       {/* Hero Section */}
@@ -192,6 +206,153 @@ export default function Index() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-24 px-4 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Choose Your Plan
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Start free and upgrade as you grow. All plans include core resume optimization.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Free Plan */}
+            <Card className="rounded-2xl shadow-soft border-gray-200 dark:border-gray-700">
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-center mb-4">
+                  <Zap className="w-8 h-8 text-gray-600" />
+                </div>
+                <CardTitle className="text-2xl font-bold">Free</CardTitle>
+                <div className="text-4xl font-bold">$0</div>
+                <div className="text-sm text-muted-foreground">forever</div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">5 API calls per month</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Resume analysis</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">ATS optimization</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">DOCX export</span>
+                  </li>
+                </ul>
+                <Button asChild variant="outline" className="w-full mt-6">
+                  <Link to="/auth">Get Started</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="rounded-2xl shadow-soft border-blue-200 dark:border-blue-700 ring-2 ring-blue-100 dark:ring-blue-900 relative scale-105">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                  Most Popular
+                </Badge>
+              </div>
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-center mb-4">
+                  <Crown className="w-8 h-8 text-blue-600" />
+                </div>
+                <CardTitle className="text-2xl font-bold">Pro</CardTitle>
+                <div className="text-4xl font-bold">$19</div>
+                <div className="text-sm text-muted-foreground">per month</div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">100 API calls per month</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Everything in Free</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Batch rewrite all bullets</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Advanced analytics</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Priority support</span>
+                  </li>
+                </ul>
+                <Button asChild className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Link to="/pricing">Upgrade to Pro</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Ultimate Plan */}
+            <Card className="rounded-2xl shadow-soft border-purple-200 dark:border-purple-700">
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-purple-600" />
+                </div>
+                <CardTitle className="text-2xl font-bold">Ultimate</CardTitle>
+                <div className="text-4xl font-bold">$49</div>
+                <div className="text-sm text-muted-foreground">per month</div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">1000 API calls per month</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Everything in Pro</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">API access</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Team collaboration</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">Premium support</span>
+                  </li>
+                </ul>
+                <Button asChild variant="outline" className="w-full mt-6">
+                  <Link to="/pricing">Choose Ultimate</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pricing CTA */}
+          <div className="text-center mt-12">
+            <p className="text-muted-foreground mb-4">
+              All plans include a 7-day free trial. No setup fees. Cancel anytime.
+            </p>
+            <Button asChild variant="ghost" className="text-primary hover:text-primary/80">
+              <Link to="/pricing">
+                View detailed pricing and features
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

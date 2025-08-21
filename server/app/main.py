@@ -25,10 +25,12 @@ from .error_handler import (
 from .config import config
 from .security import validate_upload_security, auth_dependency
 # Auth and database imports removed
-from .middleware import (
+from .middleware_old import (
     request_tracking_middleware, limiter, rate_limit_handler,
     get_rate_limit, get_upload_rate_limit, get_compute_rate_limit
 )
+from .routers import subscription
+from .middleware.usage_limiter import require_api_access
 # User routes removed
 from io import BytesIO
 import logging
@@ -40,6 +42,9 @@ app = FastAPI(title="Resume Tailor API", version="0.1.0")
 
 # Add rate limiting state
 app.state.limiter = limiter
+
+# Include subscription router
+app.include_router(subscription.router)
 
 # Add rate limit exception handler
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
@@ -276,7 +281,11 @@ def parse(req: ParseRequest, request: Request):
     }
 )
 @limiter.limit(get_rate_limit())
-async def analyze_endpoint(req: AnalyzeRequest, request: Request):
+async def analyze_endpoint(
+    req: AnalyzeRequest, 
+    request: Request,
+    api_key: str = Depends(auth_dependency)
+):
     # Handle edge cases
     resume_dict = req.resume.dict()
     jd_dict = req.jd.dict()
