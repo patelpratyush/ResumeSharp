@@ -7,28 +7,64 @@ import AtsReport from "@/components/ats-report";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useMemo } from "react";
 import { FileText, TrendingUp, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Analysis = Tables<'analyses'>;
+type Resume = Tables<'resumes'>;
 
 export default function Dashboard() {
-  const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [analysisHistory, setAnalysisHistory] = useState<Analysis[]>([]);
+  const [resumeCount, setResumeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load data from localStorage
+  // Load data from Supabase
   useEffect(() => {
-    const loadData = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    const loadData = async () => {
       try {
-        const history = localStorage.getItem('analysis-history');
-        if (history) {
-          setAnalysisHistory(JSON.parse(history));
+        // Load analyses
+        const { data: analyses, error: analysisError } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (analysisError) {
+          console.error('Failed to load analyses:', analysisError);
+        } else {
+          setAnalysisHistory(analyses || []);
+        }
+
+        // Load resume count
+        const { count, error: resumeError } = await supabase
+          .from('resumes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        if (resumeError) {
+          console.error('Failed to load resume count:', resumeError);
+        } else {
+          setResumeCount(count || 0);
         }
       } catch (error) {
-        console.error('Failed to load analysis history:', error);
+        console.error('Failed to load dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
     loadData();
-  }, []);
+  }, [user, navigate]);
   
   // Calculate dashboard metrics
   const stats = useMemo(() => {
@@ -47,8 +83,14 @@ export default function Dashboard() {
     const recentScore = scores[0] || 0; // Most recent analysis
     
     // Extract skills from recent analyses
-    const allMissing = analysisHistory.slice(0, 5).flatMap(a => a.missing || []);
-    const allMatched = analysisHistory.slice(0, 5).flatMap(a => a.matched || []);
+    const allMissing = analysisHistory.slice(0, 5).flatMap(a => {
+      const results = a.results as { missing?: string[] };
+      return results?.missing || [];
+    });
+    const allMatched = analysisHistory.slice(0, 5).flatMap(a => {
+      const results = a.results as { matched?: string[] };
+      return results?.matched || [];
+    });
     
     // Count frequency
     const missingCounts = allMissing.reduce((acc, skill) => {
@@ -123,7 +165,7 @@ export default function Dashboard() {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-2xl font-semibold">0</div>
+              <div className="text-2xl font-semibold">{resumeCount}</div>
             )}
           </CardContent>
         </Card>
@@ -228,7 +270,7 @@ export default function Dashboard() {
                           </div>
                         )}
                         <div className="text-xs text-muted-foreground">
-                          {new Date(analysis.created_at).toLocaleDateString()}
+                          {analysis.created_at ? new Date(analysis.created_at).toLocaleDateString() : ''}
                         </div>
                       </div>
                       <Badge variant={analysis.score >= 80 ? "default" : analysis.score >= 60 ? "secondary" : "outline"}>

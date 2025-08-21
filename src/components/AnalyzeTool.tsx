@@ -11,10 +11,33 @@ import { apiParseUpload, apiExportDocx } from "@/lib/api";
 import { copyToClipboard, resumeToPlainText } from "@/lib/format";
 import HeatmapTable from "./HeatmapTable";
 import ATSChips from "./ATSChips";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, AlertTriangle, CheckCircle, Wand2 } from "lucide-react";
+import { getHygieneTip, getPriorityColor, getPriorityBadgeColor } from "@/lib/hygiene-tips";
 
 type ParseState = { resume?: Resume; jd?: JD; analysis?: AnalyzeResp; canonicalAnalysis?: CanonicalAnalyzeResp };
 
+type BatchRewriteState = {
+  isOpen: boolean;
+  loading: boolean;
+  progress: number;
+  total: number;
+  currentBullet: string;
+  results: Array<{
+    original: string;
+    rewritten: string;
+    expIndex: number;
+    bulletIndex: number;
+  }>;
+};
+
 export default function AnalyzeTool() {
+    const { user } = useAuth();
+    const { toast } = useToast();
     const [jdText, setJdText] = useState("Software Engineer\nResponsibilities:\n• Build APIs\nRequirements:\n- Python, FastAPI\nPreferred:\n- React");
     const [resumeText, setResumeText] = useState("SUMMARY\nBuilder SWE.\n\nSKILLS\nPython, FastAPI, React\n\nEXPERIENCE\n• responsible for APIs\n- built CI/CD\n\nEDUCATION\nStevens Institute");
     const [title, setTitle] = useState("Software Engineer");
@@ -23,6 +46,14 @@ export default function AnalyzeTool() {
     const [quickRewrite, setQuickRewrite] = useState<null | { roleIdx: number; bulletIdx: number; keyword: string }>(null);
     const [jdInputMode, setJdInputMode] = useState<'upload' | 'paste'>('upload');
     const [resumeInputMode, setResumeInputMode] = useState<'upload' | 'paste'>('upload');
+    const [batchRewrite, setBatchRewrite] = useState<BatchRewriteState>({
+        isOpen: false,
+        loading: false,
+        progress: 0,
+        total: 0,
+        currentBullet: "",
+        results: []
+    });
 
     const jdKeywords = useMemo(() => {
         const jd = state.jd;
@@ -114,6 +145,181 @@ export default function AnalyzeTool() {
 
     function updateBulletAt(roleIdx: number, bulletIdx: number, rewritten: string) {
         return updateBullet(roleIdx, bulletIdx, rewritten);
+    }
+
+    // Batch rewrite functionality
+    const startBatchRewrite = async () => {
+        if (!state.resume || !state.canonicalAnalysis) return;
+
+        // Collect all bullets from experience
+        const allBullets: { text: string; expIndex: number; bulletIndex: number }[] = [];
+        state.resume.experience.forEach((exp, expIndex) => {
+            exp.bullets.forEach((bullet, bulletIndex) => {
+                allBullets.push({ text: bullet, expIndex, bulletIndex });
+            });
+        });
+
+        if (allBullets.length === 0) return;
+
+        setBatchRewrite({
+            isOpen: true,
+            loading: true,
+            progress: 0,
+            total: allBullets.length,
+            currentBullet: "",
+            results: []
+        });
+
+        const results: BatchRewriteState['results'] = [];
+        const jdKeywords = state.canonicalAnalysis.normalizedJD.skills || [];
+
+        for (let i = 0; i < allBullets.length; i++) {
+            const bullet = allBullets[i];
+            
+            setBatchRewrite(prev => ({
+                ...prev,
+                progress: i,
+                currentBullet: bullet.text
+            }));
+
+            try {
+                const result = await apiRewrite(
+                    "batch-rewrite",
+                    "experience",
+                    bullet.text,
+                    jdKeywords.slice(0, 5), // Use top 5 keywords
+                    25
+                );
+
+                results.push({
+                    original: bullet.text,
+                    rewritten: result.rewritten,
+                    expIndex: bullet.expIndex,
+                    bulletIndex: bullet.bulletIndex
+                });
+            } catch (error) {
+                console.error('Failed to rewrite bullet:', error);
+                results.push({
+                    original: bullet.text,
+                    rewritten: bullet.text, // Keep original on error
+                    expIndex: bullet.expIndex,
+                    bulletIndex: bullet.bulletIndex
+                });
+            }
+        }
+
+        setBatchRewrite(prev => ({
+            ...prev,
+            loading: false,
+            progress: allBullets.length,
+            results
+        }));
+
+        toast({
+            title: "Batch Rewrite Complete",
+            description: `Processed ${allBullets.length} bullet points. Review and apply changes.`,
+        });
+    };
+
+    const applyBatchRewrite = () => {
+        if (!state.resume || batchRewrite.results.length === 0) return;
+
+        const updatedResume = JSON.parse(JSON.stringify(state.resume));
+        
+        batchRewrite.results.forEach(result => {
+            if (updatedResume.experience[result.expIndex]?.bullets[result.bulletIndex]) {
+                updatedResume.experience[result.expIndex].bullets[result.bulletIndex] = result.rewritten;
+            }
+        });
+
+        setState(prev => ({ ...prev, resume: updatedResume }));
+        setBatchRewrite(prev => ({ ...prev, isOpen: false }));
+
+        toast({
+            title: "Changes Applied",
+            description: "All rewritten bullet points have been applied to your resume.",
+        });
+    };
+
+    const cancelBatchRewrite = () => {
+        setBatchRewrite({
+            isOpen: false,
+            loading: false,
+            progress: 0,
+            total: 0,
+            currentBullet: "",
+            results: []
+        });
+    };
+
+    async function saveAnalysis() {
+        if (!user || !state.canonicalAnalysis || !state.jd || !state.resume) {
+            toast({
+                title: "Cannot save",
+                description: "Please sign in and complete an analysis first.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            // Save resume first
+            const { data: resumeData, error: resumeError } = await supabase
+                .from('resumes')
+                .upsert({
+                    user_id: user.id,
+                    name: `Resume for ${title || 'Job'}`,
+                    content: state.resume,
+                    file_type: 'json',
+                    is_current: true,
+                })
+                .select()
+                .single();
+
+            if (resumeError) throw resumeError;
+
+            // Save job description
+            const { data: jdData, error: jdError } = await supabase
+                .from('job_descriptions')
+                .upsert({
+                    user_id: user.id,
+                    title: title || state.jd.title || 'Unknown Job',
+                    company: state.jd.company || null,
+                    content: state.jd,
+                    original_text: jdText,
+                })
+                .select()
+                .single();
+
+            if (jdError) throw jdError;
+
+            // Save analysis
+            const { error: analysisError } = await supabase
+                .from('analyses')
+                .insert({
+                    user_id: user.id,
+                    resume_id: resumeData.id,
+                    jd_id: jdData.id,
+                    job_title: title || state.jd.title || 'Unknown Job',
+                    company_name: state.jd.company || null,
+                    score: state.canonicalAnalysis.score,
+                    results: state.canonicalAnalysis,
+                });
+
+            if (analysisError) throw analysisError;
+
+            toast({
+                title: "Analysis saved",
+                description: "Your analysis has been saved to your history.",
+            });
+        } catch (error) {
+            console.error('Failed to save analysis:', error);
+            toast({
+                title: "Save failed",
+                description: "Failed to save analysis. Please try again.",
+                variant: "destructive",
+            });
+        }
     }
 
     return (
@@ -296,35 +502,10 @@ export default function AnalyzeTool() {
                                                     try {
                                                         const { parsed } = await apiParseUpload("resume", f);
                                                         const r = parsed as Resume;
-                                                        const experienceLines: string[] = [];
-                                                        (r.experience || []).forEach(role => {
-                                                            experienceLines.push(`${role.role} ${role.start} – ${role.end || "Present"}`);
-                                                            experienceLines.push(`${role.company}${role.location ? `, ${role.location}` : ""}`);
-                                                            (role.bullets || []).forEach(bullet => experienceLines.push(`• ${bullet}`));
-                                                            experienceLines.push(""); // blank line between roles
-                                                        });
                                                         
-                                                        const projectLines: string[] = [];
-                                                        (r.projects || []).forEach(proj => {
-                                                            projectLines.push(proj.name);
-                                                            (proj.bullets || []).forEach(bullet => projectLines.push(`• ${bullet}`));
-                                                            projectLines.push(""); // blank line between projects
-                                                        });
-                                                        
-                                                        const txt = [
-                                                            "SUMMARY",
-                                                            r.summary || "",
-                                                            "",
-                                                            "SKILLS",
-                                                            (r.skills || []).join(", "),
-                                                            "",
-                                                            "EXPERIENCE",
-                                                            ...experienceLines,
-                                                            ...(projectLines.length > 0 ? ["PROJECTS", ...projectLines] : []),
-                                                            "EDUCATION",
-                                                            ...(r.education?.map(e => `${e.school} • ${e.degree} • ${e.grad}`) || [])
-                                                        ].join("\n");
-                                                        setResumeText(txt.trim());
+                                                        // Use the existing resumeToPlainText function to ensure contact info is included
+                                                        const txt = resumeToPlainText(r);
+                                                        setResumeText(txt);
                                                         setState(prev => ({ ...prev, resume: r }));
                                                     } catch {
                                                         alert("Failed to parse resume file");
@@ -544,7 +725,114 @@ export default function AnalyzeTool() {
                             </div>
                         )}
 
-                        <div className="flex gap-2">
+                        {/* ATS Optimization Checklist */}
+                        {state.canonicalAnalysis?.hygiene_flags && state.canonicalAnalysis.hygiene_flags.length > 0 && (
+                            <div className="space-y-4 mt-8">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                    <h3 className="text-lg font-semibold">ATS Optimization Checklist</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {state.canonicalAnalysis.hygiene_flags.map((flag) => {
+                                        const tip = getHygieneTip(flag);
+                                        return (
+                                            <Card key={flag} className={`border ${getPriorityColor(tip.priority)}`}>
+                                                <CardContent className="pt-4">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="secondary" className={getPriorityBadgeColor(tip.priority)}>
+                                                                {tip.priority.toUpperCase()}
+                                                            </Badge>
+                                                            <h4 className="font-semibold text-sm">{tip.title}</h4>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground mb-2">{tip.description}</p>
+                                                    <div className="bg-muted/30 p-3 rounded border">
+                                                        <p className="text-sm font-medium mb-1">💡 Action Required:</p>
+                                                        <p className="text-sm text-muted-foreground">{tip.actionable}</p>
+                                                        {tip.example && (
+                                                            <div className="mt-2 p-2 bg-muted rounded text-xs">
+                                                                <span className="font-medium">Example: </span>
+                                                                <span className="text-muted-foreground">{tip.example}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                                <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+                                    <CardContent className="pt-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                Addressing these issues will improve your ATS compatibility and increase your chances of getting past initial screening.
+                                            </span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {/* Job Requirements Analysis */}
+                        {state.canonicalAnalysis?.normalizedJD && (
+                            <div className="space-y-4 mt-8">
+                                <h3 className="text-lg font-semibold">Job Requirements Analysis</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base">Required Skills</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex flex-wrap gap-2">
+                                                {state.canonicalAnalysis.normalizedJD.skills.map((skill) => (
+                                                    <Badge 
+                                                        key={skill} 
+                                                        variant={state.canonicalAnalysis.matched.includes(skill) ? "default" : "secondary"}
+                                                    >
+                                                        {skill}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base">Key Responsibilities</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ul className="space-y-1 text-sm">
+                                                {state.canonicalAnalysis.normalizedJD.responsibilities.map((resp, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2">
+                                                        <span className="mt-1">•</span>
+                                                        <span>{resp}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2 mt-8">
+                            <Button
+                                onClick={saveAnalysis}
+                                className="bg-primary hover:bg-primary/90"
+                            >
+                                Save Analysis
+                            </Button>
+                            <Button
+                                onClick={startBatchRewrite}
+                                disabled={!state.canonicalAnalysis}
+                                variant="default"
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                            >
+                                <Wand2 className="w-4 h-4 mr-2" />
+                                Batch Rewrite All
+                            </Button>
                             <Button
                                 variant="secondary"
                                 onClick={async () => {
@@ -556,6 +844,7 @@ export default function AnalyzeTool() {
                                 Copy tailored resume
                             </Button>
                             <Button
+                                variant="outline"
                                 onClick={() => {
                                     const r = state.resume;
                                     if (!r) return alert("Run Analyze first or upload resume.");
@@ -586,6 +875,79 @@ export default function AnalyzeTool() {
                                 />
                             );
                         })()}
+
+                        {/* Batch Rewrite Modal */}
+                        <Dialog open={batchRewrite.isOpen} onOpenChange={(open) => !batchRewrite.loading && !open && cancelBatchRewrite()}>
+                            <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                        <Wand2 className="w-5 h-5" />
+                                        Batch Rewrite All Bullets
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        {batchRewrite.loading 
+                                            ? "AI is rewriting all your bullet points to better match the job description."
+                                            : "Review the rewritten bullets and apply changes."
+                                        }
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                {batchRewrite.loading ? (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <Progress value={(batchRewrite.progress / batchRewrite.total) * 100} className="flex-1" />
+                                            <span className="text-sm text-muted-foreground">
+                                                {batchRewrite.progress}/{batchRewrite.total}
+                                            </span>
+                                        </div>
+                                        {batchRewrite.currentBullet && (
+                                            <div className="text-sm text-muted-foreground">
+                                                Currently rewriting: "{batchRewrite.currentBullet.substring(0, 80)}..."
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                                        {batchRewrite.results.map((result, idx) => (
+                                            <div key={idx} className="border rounded-lg p-4 space-y-2">
+                                                <div className="text-sm font-medium text-muted-foreground">
+                                                    Experience {result.expIndex + 1}, Bullet {result.bulletIndex + 1}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground mb-1">Original:</div>
+                                                        <div className="text-sm bg-muted p-2 rounded">{result.original}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground mb-1">Rewritten:</div>
+                                                        <div className="text-sm bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
+                                                            {result.rewritten}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <DialogFooter>
+                                    {batchRewrite.loading ? (
+                                        <Button onClick={cancelBatchRewrite} variant="outline">
+                                            Cancel
+                                        </Button>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Button onClick={cancelBatchRewrite} variant="outline">
+                                                Cancel
+                                            </Button>
+                                            <Button onClick={applyBatchRewrite} className="bg-green-600 hover:bg-green-700">
+                                                Apply All Changes
+                                            </Button>
+                                        </div>
+                                    )}
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </CardContent>
                 </Card>
             )}

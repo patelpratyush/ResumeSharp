@@ -32,6 +32,7 @@ from .middleware import (
 # User routes removed
 from io import BytesIO
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,20 @@ def get_config(request: Request):
         response["security_warnings"] = validation["warnings"]
     
     return response
+
+
+@app.get("/api/debug/env")
+def debug_env():
+    """Debug endpoint to check environment variables (only in debug mode)."""
+    if not config.DEBUG_MODE:
+        return {"error": "Debug mode disabled"}
+    
+    return {
+        "openai_key_present": bool(os.getenv("OPENAI_API_KEY")),
+        "anthropic_key_present": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "openai_key_length": len(os.getenv("OPENAI_API_KEY", "")),
+        "debug_mode": config.DEBUG_MODE
+    }
 
 
 @app.post(

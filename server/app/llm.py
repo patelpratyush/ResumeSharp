@@ -3,8 +3,22 @@ from typing import List, Dict, Any, Optional
 from .error_handler import handle_exception, safe_execute
 from .config import config
 
-USE_OPENAI = bool(os.getenv("OPENAI_API_KEY"))
-USE_ANTHROPIC = bool(os.getenv("ANTHROPIC_API_KEY"))
+def _get_llm_availability():
+    """Check LLM availability dynamically (after config is loaded)."""
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    
+    # Debug logging
+    if config.DEBUG_MODE:
+        print(f"DEBUG: OpenAI key present: {bool(openai_key)}")
+        print(f"DEBUG: Anthropic key present: {bool(anthropic_key)}")
+        if openai_key:
+            print(f"DEBUG: OpenAI key length: {len(openai_key)}")
+    
+    return {
+        'openai': bool(openai_key),
+        'anthropic': bool(anthropic_key)
+    }
 
 ENHANCED_SYS_PROMPT = """You are a professional resume writer helping to optimize resume bullets for ATS systems while preserving truthfulness.
 
@@ -49,8 +63,8 @@ def _validate_llm_response(response_data: Dict[str, Any], original_bullets: List
     if len(bullets) != len(original_bullets):
         return False
         
-    # Confidence threshold
-    if confidence < 0.7:
+    # Confidence threshold (lowered to accept more results)
+    if confidence < 0.5:
         return False
         
     # Check bullet length constraints
@@ -97,8 +111,16 @@ def rewrite_bullets_llm(
     if total_chars > 2000:  # Character limit
         return None
         
-    if not (USE_OPENAI or USE_ANTHROPIC):
+    # Check LLM availability dynamically
+    llm_available = _get_llm_availability()
+    if not (llm_available['openai'] or llm_available['anthropic']):
+        if config.DEBUG_MODE:
+            print("DEBUG: No LLM available, falling back to rules")
         return None
+    
+    if config.DEBUG_MODE:
+        print(f"DEBUG: LLM available - OpenAI: {llm_available['openai']}, Anthropic: {llm_available['anthropic']}")
+        print(f"DEBUG: Attempting LLM rewrite for {len(bullets)} bullets")
     
     # Build prompt
     user_prompt = f"""Section: {section_name}
@@ -114,7 +136,7 @@ Please enhance these bullets following the rules."""
         try:
             start_time = time.time()
             
-            if USE_ANTHROPIC:
+            if llm_available['anthropic']:
                 import anthropic
                 client = anthropic.Anthropic(timeout=timeout_seconds)
                 
@@ -127,7 +149,7 @@ Please enhance these bullets following the rules."""
                 )
                 content = response.content[0].text
                 
-            elif USE_OPENAI:
+            elif llm_available['openai']:
                 from openai import OpenAI
                 client = OpenAI(timeout=timeout_seconds)
                 
@@ -161,7 +183,7 @@ Please enhance these bullets following the rules."""
                         "keywords_used": data.get("keywords_used", []),
                         "confidence": data["confidence"],
                         "method": "llm",
-                        "provider": "anthropic" if USE_ANTHROPIC else "openai",
+                        "provider": "anthropic" if llm_available['anthropic'] else "openai",
                         "elapsed_seconds": round(elapsed, 2)
                     }
                     

@@ -60,6 +60,70 @@ type HistoryEntry = {
   analysisSnapshot: CanonicalAnalyzeResp;
 };
 
+// Helper function to convert resume object back to text format
+function convertResumeToText(resume: any): string {
+  const sections = [];
+  
+  // Contact info
+  if (resume.contact?.name) {
+    sections.push(resume.contact.name);
+  }
+  if (resume.contact?.email) {
+    sections.push(resume.contact.email);
+  }
+  if (resume.contact?.phone) {
+    sections.push(resume.contact.phone);
+  }
+  if (resume.contact?.links?.length) {
+    sections.push(...resume.contact.links);
+  }
+  
+  // Summary
+  if (resume.summary) {
+    sections.push('SUMMARY');
+    sections.push(resume.summary);
+  }
+  
+  // Skills
+  if (resume.skills?.length) {
+    sections.push('SKILLS');
+    sections.push(resume.skills.join(', '));
+  }
+  
+  // Experience
+  if (resume.experience?.length) {
+    sections.push('EXPERIENCE');
+    resume.experience.forEach((exp: any) => {
+      sections.push(`${exp.role} - ${exp.company} (${exp.start}${exp.end ? ` - ${exp.end}` : ' - Present'})`);
+      if (exp.location) sections.push(exp.location);
+      if (exp.bullets?.length) {
+        exp.bullets.forEach((bullet: string) => sections.push(`• ${bullet}`));
+      }
+    });
+  }
+  
+  // Projects
+  if (resume.projects?.length) {
+    sections.push('PROJECTS');
+    resume.projects.forEach((proj: any) => {
+      sections.push(proj.name);
+      if (proj.bullets?.length) {
+        proj.bullets.forEach((bullet: string) => sections.push(`• ${bullet}`));
+      }
+    });
+  }
+  
+  // Education
+  if (resume.education?.length) {
+    sections.push('EDUCATION');
+    resume.education.forEach((edu: any) => {
+      sections.push(`${edu.degree} - ${edu.school} (${edu.grad})`);
+    });
+  }
+  
+  return sections.join('\n');
+}
+
 export default function AnalyzeScreen() {
   const [jdText, setJdText] = useState("");
   const [resumeText, setResumeText] = useState("");
@@ -96,8 +160,43 @@ export default function AnalyzeScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
 
-  // Load history and settings from localStorage on mount
+  // Load history and settings, and check for re-analyze data
   useEffect(() => {
+    // Check for re-analyze data first
+    const reanalyzeResume = sessionStorage.getItem('reanalyze-resume');
+    const reanalyzeJd = sessionStorage.getItem('reanalyze-jd');
+    const reanalyzeJdText = sessionStorage.getItem('reanalyze-jd-text');
+    const reanalyzeJobTitle = sessionStorage.getItem('reanalyze-job-title');
+
+    if (reanalyzeResume && reanalyzeJd) {
+      try {
+        const resumeData = JSON.parse(reanalyzeResume);
+        const jdData = JSON.parse(reanalyzeJd);
+        
+        // Convert resume data to text format for display
+        const resumeDisplayText = convertResumeToText(resumeData);
+        setResumeText(resumeDisplayText);
+        
+        // Set JD text
+        setJdText(reanalyzeJdText || '');
+        
+        // Set job title
+        setTitle(reanalyzeJobTitle || '');
+        
+        // Clear sessionStorage
+        sessionStorage.removeItem('reanalyze-resume');
+        sessionStorage.removeItem('reanalyze-jd');
+        sessionStorage.removeItem('reanalyze-jd-text');
+        sessionStorage.removeItem('reanalyze-job-title');
+        
+        // Switch to paste mode for both
+        setResumeInputMode('paste');
+        setJdInputMode('paste');
+      } catch (error) {
+        console.error('Failed to load re-analyze data:', error);
+      }
+    }
+
     const savedHistory = localStorage.getItem('tailor-flow-history');
     if (savedHistory) {
       try {

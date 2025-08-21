@@ -109,16 +109,16 @@ export function getHygieneTip(flag: string): HygieneTip {
 
 export function getPriorityColor(priority: 'high' | 'medium' | 'low'): string {
   switch (priority) {
-    case 'high': return 'text-red-700 bg-red-50 border-red-200';
-    case 'medium': return 'text-amber-700 bg-amber-50 border-amber-200';
-    case 'low': return 'text-blue-700 bg-blue-50 border-blue-200';
+    case 'high': return 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950';
+    case 'medium': return 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950';
+    case 'low': return 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950';
   }
 }
 
 export function getPriorityBadgeColor(priority: 'high' | 'medium' | 'low'): string {
   switch (priority) {
-    case 'high': return 'bg-red-100 text-red-800';
-    case 'medium': return 'bg-amber-100 text-amber-800';
-    case 'low': return 'bg-blue-100 text-blue-800';
+    case 'high': return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+    case 'medium': return 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200';
+    case 'low': return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
   }
 }

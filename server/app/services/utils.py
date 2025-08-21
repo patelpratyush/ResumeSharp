@@ -600,20 +600,27 @@ def normalize_skill_lines(lines: list[str]) -> list[str]:
 
 EMAIL_RX = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 PHONE_RX = re.compile(r"(?:\+?\d{1,3}[\s\-\.]?)?(?:\(?\d{3}\)?[\s\-\.]?)\d{3}[\s\-\.]?\d{4}")
-URL_RX = re.compile(r"\b(https?://|www\.)[^\s]+", re.I)
+URL_RX = re.compile(r"\b(?:https?://|www\.|[a-zA-Z0-9-]+\.(?:com|org|net|edu|gov|io|co|ai|me|us|uk|ca|de|fr|in|app|dev)(?:/[^\s|]*)?)", re.I)
 
 def extract_contact(lines: list[str]) -> dict:
     text = "\n".join(lines)
     emails = EMAIL_RX.findall(text)
     phones = PHONE_RX.findall(text)
-    urls = URL_RX.findall(text)  # this returns only the scheme match groups; fix below
-
-    # Re-run URLs to get full matches
+    # Extract URLs using the improved regex
     urls_full = []
-    for m in re.finditer(r"\b(?:https?://|www\.)[^\s]+", text, flags=re.I):
-        u = m.group(0)
-        # normalize www. to https://www.
+    for m in re.finditer(URL_RX.pattern, text, flags=re.I):
+        u = m.group(0).rstrip('|')  # Remove trailing pipe if present
+        
+        # Skip if this URL is part of an email address
+        start_pos = m.start()
+        if start_pos > 0 and text[start_pos-1] == '@':
+            continue
+            
+        # normalize different URL formats
         if u.lower().startswith("www."):
+            u = "https://" + u
+        elif not u.lower().startswith(("http://", "https://")):
+            # For bare domains, add https://
             u = "https://" + u
         urls_full.append(u)
 

@@ -101,7 +101,7 @@ def rewrite_bullets_enhanced(
     constraints: Dict[str, Any] | None = None
 ) -> Dict[str, Any]:
     """
-    Enhanced bullet rewriting with LLM integration and fallback to rules-based approach.
+    LLM-only bullet rewriting with enhanced prompting.
     
     Args:
         section: Section name (e.g., "experience", "projects")
@@ -127,65 +127,61 @@ def rewrite_bullets_enhanced(
             "diff": []
         }
     
-    # Try LLM first if enabled and available
-    if use_llm and len(original_bullets) <= 10:  # Reasonable limit
-        try:
-            llm_result = rewrite_bullets_llm(
-                section_name=section,
-                bullets=original_bullets,
-                jd_keywords=jd_keywords,
-                timeout_seconds=llm_timeout
-            )
+    # Only use LLM - no fallback
+    if not use_llm:
+        return {
+            "bullets": original_bullets,
+            "method": "unchanged",
+            "confidence": 1.0,
+            "keywords_used": [],
+            "diff": []
+        }
+    
+    try:
+        llm_result = rewrite_bullets_llm(
+            section_name=section,
+            bullets=original_bullets,
+            jd_keywords=jd_keywords,
+            timeout_seconds=llm_timeout
+        )
+        
+        if llm_result and llm_result.get("confidence", 0) >= 0.5:  # Lower threshold
+            # LLM succeeded
+            enhanced_bullets = llm_result["bullets"]
             
-            if llm_result and llm_result.get("confidence", 0) >= 0.7:
-                # LLM succeeded with good confidence
-                enhanced_bullets = llm_result["bullets"]
-                
-                # Calculate diff for each bullet
-                diffs = []
-                for i, (orig, new) in enumerate(zip(original_bullets, enhanced_bullets)):
-                    diffs.append({
-                        "bullet_index": i,
-                        "original": orig,
-                        "rewritten": new,
-                        "diff": make_diff(orig, new)
-                    })
-                
-                return {
-                    "bullets": enhanced_bullets,
-                    "method": "llm",
-                    "confidence": llm_result["confidence"],
-                    "keywords_used": llm_result.get("keywords_used", []),
-                    "provider": llm_result.get("provider"),
-                    "elapsed_seconds": llm_result.get("elapsed_seconds"),
-                    "diff": diffs
-                }
-                
-        except Exception:
-            # Fall through to rules-based approach
-            pass
+            # Calculate diff for each bullet
+            diffs = []
+            for i, (orig, new) in enumerate(zip(original_bullets, enhanced_bullets)):
+                diffs.append({
+                    "bullet_index": i,
+                    "original": orig,
+                    "rewritten": new,
+                    "diff": make_diff(orig, new)
+                })
+            
+            return {
+                "bullets": enhanced_bullets,
+                "method": "llm",
+                "confidence": llm_result["confidence"],
+                "keywords_used": llm_result.get("keywords_used", []),
+                "provider": llm_result.get("provider"),
+                "elapsed_seconds": llm_result.get("elapsed_seconds"),
+                "diff": diffs
+            }
+            
+    except Exception as e:
+        # LLM failed - return error instead of fallback
+        if constraints.get("debug_mode", False):
+            print(f"DEBUG: LLM failed: {str(e)}")
     
-    # Fallback to rules-based approach for each bullet
-    enhanced_bullets = []
-    diffs = []
-    
-    for i, bullet in enumerate(original_bullets):
-        # Use existing rules-based rewriter
-        result = _rewrite_single_bullet(bullet, constraints)
-        enhanced_bullets.append(result["rewritten"])
-        diffs.append({
-            "bullet_index": i,
-            "original": bullet,
-            "rewritten": result["rewritten"],
-            "diff": result["diff"]
-        })
-    
+    # No fallback - return original if LLM fails
     return {
-        "bullets": enhanced_bullets,
-        "method": "rules",
-        "confidence": 0.8,  # Rules-based has good confidence
-        "keywords_used": jd_keywords[:2],  # Rules try to use keywords
-        "diff": diffs
+        "bullets": original_bullets,
+        "method": "llm_failed",
+        "confidence": 0.0,
+        "keywords_used": [],
+        "error": "LLM processing failed or unavailable",
+        "diff": []
     }
 
 
@@ -263,19 +259,23 @@ def _rewrite_single_bullet(text: str, constraints: Dict[str, Any]) -> Dict[str, 
 
 def rewrite(section: str, text: str, constraints: Dict[str, Any] | None = None):
     """
-    Legacy single-text rewriter (maintains backward compatibility).
+    LLM-only single-text rewriter (maintains backward compatibility).
     
     For new code, prefer rewrite_bullets_enhanced() for better functionality.
     """
     # Check if this is actually a list of bullets (common case)
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     
+    # Always use LLM-based rewriter (no rules fallback)
+    result = rewrite_bullets_enhanced(section, lines, constraints)
+    
     if len(lines) > 1:
-        # Multiple bullets - use enhanced rewriter
-        result = rewrite_bullets_enhanced(section, lines, constraints)
-        # Convert back to legacy format
+        # Multiple bullets - convert back to legacy format
         rewritten_text = '\n'.join(result["bullets"])
         return {"rewritten": rewritten_text, "diff": result["diff"]}
     
-    # Single bullet - use rules-based rewriter
-    return _rewrite_single_bullet(text, constraints)
+    # Single bullet
+    return {
+        "rewritten": result["bullets"][0] if result["bullets"] else text,
+        "diff": result["diff"][0]["diff"] if result["diff"] else []
+    }

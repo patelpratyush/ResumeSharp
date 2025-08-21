@@ -416,9 +416,17 @@ def _read_pdf_bytes(fp: BinaryIO) -> str:
     text_parts = []
     with pdfplumber.open(fp) as pdf:
         for page in pdf.pages:
-            # Extract text with layout preservation
-            page_text = page.extract_text(layout=True) or page.extract_text() or ""
-            if page_text:
+            # Try layout=True first, but check if it contains meaningful content
+            page_text_layout = page.extract_text(layout=True) or ""
+            page_text_simple = page.extract_text() or ""
+            
+            # Use layout=True only if it has substantial content, otherwise use simple extraction
+            if page_text_layout.strip() and len(page_text_layout.strip()) > len(page_text_simple.strip()) * 0.5:
+                page_text = page_text_layout
+            else:
+                page_text = page_text_simple
+                
+            if page_text.strip():
                 text_parts.append(page_text)
     
     # Join pages with double newlines, but preserve existing line structure

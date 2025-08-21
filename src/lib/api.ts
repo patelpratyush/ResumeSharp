@@ -62,7 +62,7 @@ export type CanonicalAnalyzeResp = {
   hygiene_flags?: string[];
 };
 
-const base = "";
+const base = "http://localhost:8000";
 
 type ApiError = {
   error: string;
