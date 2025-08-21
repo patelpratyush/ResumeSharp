@@ -38,7 +38,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Resume Tailor API", version="0.1.0")
+app = FastAPI(title="ResumeSharp API", version="0.1.0")
 
 # Add rate limiting state
 app.state.limiter = limiter
