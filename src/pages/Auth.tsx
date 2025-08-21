@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -142,12 +143,17 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 dark:to-muted/20 flex items-center justify-center p-4 relative">
       <Helmet>
         <title>Sign In – Resume Tailor</title>
         <meta name="description" content="Sign in to your Resume Tailor account to access personalized resume optimization tools." />
         <link rel="canonical" href="/auth" />
       </Helmet>
+
+      {/* Theme toggle */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">

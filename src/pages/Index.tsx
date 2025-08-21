@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import ThemeToggle from "@/components/ThemeToggle";
 import { 
   CheckCircle, 
   Zap, 
@@ -17,23 +18,28 @@ import {
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       <Helmet>
         <title>Resume Tailor – AI-Powered Resume Optimization</title>
         <meta name="description" content="Transform your resume with AI-powered keyword optimization, ATS compliance checks, and instant tailoring for any job description." />
         <link rel="canonical" href="/" />
       </Helmet>
 
+      {/* Header with theme toggle */}
+      <header className="absolute top-0 right-0 p-4 z-50">
+        <ThemeToggle />
+      </header>
+
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 gradient-subtle opacity-50" />
+        {/* Background gradient that adapts to theme */}
+        <div className="absolute inset-0 gradient-subtle opacity-60 dark:opacity-40" />
         
-        {/* Animated background elements */}
+        {/* Animated background elements with theme-aware colors */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl smooth-bounce" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-end/10 blur-3xl smooth-bounce delay-1000" />
-          <div className="absolute top-1/3 left-1/4 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-pulse delay-500" />
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 dark:bg-primary/20 blur-3xl smooth-bounce" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-primary/5 dark:bg-primary/15 blur-3xl smooth-bounce delay-1000" />
+          <div className="absolute top-1/3 left-1/4 w-32 h-32 rounded-full bg-primary/5 dark:bg-primary/10 blur-2xl animate-pulse delay-500" />
         </div>
 
         <div className="relative z-10 text-center space-y-8 px-4 max-w-4xl mx-auto">
@@ -92,10 +98,10 @@ export default function Index() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-4">
+      <section className="py-24 px-4 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">Why Choose Resume Tailor?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Why Choose Resume Tailor?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Powered by advanced AI and designed for modern job seekers
             </p>
@@ -141,10 +147,10 @@ export default function Index() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 px-4 bg-muted/30">
+      <section className="py-24 px-4 bg-muted/30 dark:bg-muted/20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">How It Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">How It Works</h2>
             <p className="text-lg text-muted-foreground">
               Three simple steps to a perfect resume
             </p>
@@ -173,14 +179,14 @@ export default function Index() {
             ].map((step, index) => (
               <div key={index} className="text-center space-y-4 group">
                 <div className="relative">
-                  <div className="w-20 h-20 mx-auto rounded-full gradient-primary flex items-center justify-center text-white shadow-glow group-hover:scale-110 hover-float transition-all duration-500">
+                  <div className="w-20 h-20 mx-auto rounded-full gradient-primary flex items-center justify-center text-white dark:text-primary-foreground shadow-glow group-hover:scale-110 hover-float transition-all duration-500">
                     {step.icon}
                   </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-background border-2 border-primary flex items-center justify-center text-xs font-bold text-primary">
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-background dark:bg-background border-2 border-primary flex items-center justify-center text-xs font-bold text-primary">
                     {step.step}
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold">{step.title}</h3>
+                <h3 className="text-xl font-semibold text-foreground">{step.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {step.description}
                 </p>
@@ -191,10 +197,10 @@ export default function Index() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4">
+      <section className="py-24 px-4 bg-background">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
               Ready to Land Your Dream Job?
             </h2>
             <p className="text-lg text-muted-foreground">
