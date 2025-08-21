@@ -1,8 +1,9 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+// Badge import removed
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+// Avatar and dropdown imports removed
 import { Helmet } from "react-helmet-async";
+import { Settings } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppLayout() {
@@ -65,14 +66,6 @@ export default function AppLayout() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-3">
-              <Badge 
-                variant="secondary" 
-                className="hidden sm:flex bg-gradient-subtle border-primary/20"
-                aria-label="Current plan"
-              >
-                Free Plan
-              </Badge>
-              
               <ThemeToggle />
               
               <Button 
@@ -86,16 +79,15 @@ export default function AppLayout() {
               </Button>
 
               <Button 
+                asChild 
                 variant="ghost" 
                 size="icon" 
                 className="hover-scale"
-                aria-label="User menu"
+                aria-label="Settings"
               >
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                    TF
-                  </AvatarFallback>
-                </Avatar>
+                <NavLink to="/settings">
+                  <Settings className="h-4 w-4" />
+                </NavLink>
               </Button>
             </div>
           </div>

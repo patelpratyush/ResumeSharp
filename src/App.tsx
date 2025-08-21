@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+// Authentication removed
 import AppLayout from "./layouts/AppLayout";
 import Index from "./pages/Index";
 import Upload from "./pages/Upload";
@@ -12,6 +13,7 @@ import Diff from "./pages/Diff";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import AnalyzeScreen from "./components/AnalyzeScreen";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,7 @@ const App = () => (
             <Route element={<AppLayout />}> 
               <Route index element={<Index />} />
               <Route path="upload" element={<Upload />} />
+              <Route path="analyze" element={<AnalyzeScreen />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="diff" element={<Diff />} />
               <Route path="history" element={<History />} />

@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Dict, Any, BinaryIO, List, Tuple
 from .utils import (
     normalize_text, split_sections, collect_bullets, guess_section_name,
@@ -7,6 +8,29 @@ from .utils import (
 )
 import pdfplumber
 
+def _preprocess_experience_lines(lines: list[str]) -> list[str]:
+    """
+    Split concatenated role blocks like
+    'Role Oct 2024 – PresentCompany City, ST• Bullet ...'
+    into separate lines before parsing.
+    """
+    out: list[str] = []
+    for ln in lines:
+        # Handle heavily concatenated text first
+        # Break before date ranges that look like new roles
+        ln = re.sub(r"((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\s*[\-–—]\s*(?:Present|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}))", r"\n\1", ln)
+        
+        # Break before company/location patterns
+        ln = re.sub(r"(?<=[a-z])([A-Z][a-zA-Z\s]+(?:Remote|[A-Z]{2})(?:\s|$))", r"\n\1", ln)
+        
+        # Break before bullets
+        ln = re.sub(r"(?<=[a-z\)])(\s*•\s*)", r"\n\1", ln)
+        
+        # Break at role title patterns followed by dates
+        ln = re.sub(r"(?<=[a-z\)])([A-Z][A-Za-z\s/]+(?:Engineer|Developer|Research|Assistant|Intern|Analyst|Scientist|Manager|Fellow|Consultant|Lead|Architect)[A-Za-z\s]*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})", r"\n\1", ln)
+        
+        out.extend([line.strip() for line in ln.splitlines() if line.strip()])
+    return out
     
 def _project_blocks(lines: List[str]) -> List[Tuple[str, List[str]]]:
     """
@@ -263,11 +287,9 @@ def parse_resume_text(content: str) -> Dict[str, Any]:
     # Skills (canonicalize like JD)
     skills = normalize_skill_lines(sections.get("skills", []))
 
-    # Experience (multi-role). If explicit section missing, scan all lines.
-    exp_lines = sections.get("experience", [])
-    if not exp_lines:
-        # fallback: scan entire document for role headers
-        exp_lines = lines
+    # Experience (multi‑role). If explicit section missing, scan all lines.
+    exp_lines = sections.get("experience", []) or lines
+    exp_lines = _preprocess_experience_lines(exp_lines)
     experience = _split_experience_roles(exp_lines)
 
     # Projects
@@ -334,6 +356,32 @@ def parse_jd_text(content: str) -> Dict[str, Any]:
     req_raw = sections.get("requirements", [])
     pref_raw = sections.get("preferred", [])
     skills_raw = sections.get("skills", [])
+    
+    # For unstructured JDs, try to extract skills from Qualifications section
+    quals = sections.get("qualifications", [])
+    if quals and not req_raw:
+        req_raw = quals
+    
+    # If still no requirements found, look for key responsibilities as skills
+    key_resp = sections.get("key responsibilities", [])
+    if key_resp:
+        resp.extend(collect_bullets(key_resp))
+    
+    # Look for technology mentions in the full text if no structured skills found
+    if not req_raw and not skills_raw and not pref_raw:
+        full_text = " ".join(lines)
+        # Extract common tech skills from the full text
+        tech_patterns = [
+            r'\b(Python|JavaScript|TypeScript|Java|C\+\+|SQL|React|Node\.js|Flask|FastAPI|Docker|Kubernetes|AWS|Azure|GCP)\b',
+            r'\b(Git|Jenkins|MongoDB|PostgreSQL|Linux|HTML|CSS|Angular|Vue\.js|Spring|Django|TensorFlow|PyTorch)\b'
+        ]
+        extracted_skills = set()
+        for pattern in tech_patterns:
+            matches = re.findall(pattern, full_text, re.IGNORECASE)
+            extracted_skills.update(skill.lower() for skill in matches)
+        
+        if extracted_skills:
+            req_raw.extend(list(extracted_skills))
 
     required = normalize_skill_lines(req_raw)
     preferred = normalize_skill_lines(pref_raw)

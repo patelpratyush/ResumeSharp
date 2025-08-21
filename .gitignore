@@ -1,3 +1,22 @@
+# Dependencies
+node_modules
+server/.venv/
+server/venv/
+server/env/
+
+# Build outputs
+dist
+dist-ssr
+build
+*.tsbuildinfo
+
+# Environment variables and secrets
+.env
+.env.*
+server/.env
+server/.env.*
+*.local
+
 # Logs
 logs
 *.log
@@ -7,10 +26,29 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Runtime and cache
+.cache
+.parcel-cache
+.next
+.nuxt
+.vite
+
+# Testing
+coverage
+.nyc_output
+.pytest_cache/
+server/.pytest_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+server/__pycache__/
+server/**/__pycache__/
+server/*.py[cod]
+server/**/*.py[cod]
+*.so
+.Python
 
 # Editor directories and files
 .vscode/*
@@ -22,15 +60,22 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*~
 
-# Backend (Python/FastAPI)
-server/.env
-server/.env.*
-server/__pycache__/
-server/**/__pycache__/
-server/*.py[cod]
-server/**/*.py[cod]
-server/venv/
-server/.venv/
-server/env/
-server/.pytest_cache/
+# OS generated files
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Application specific
+# (Add any specific files your app generates that shouldn't be tracked)

@@ -1,0 +1,43 @@
+# canonical -> aliases
+ALIASES = {
+    "javascript": ["js", "nodejs", "node.js"],
+    "typescript": ["ts"],
+    "react": ["react.js", "reactjs"],
+    "next.js": ["nextjs", "next"],
+    "vue": ["vue.js", "vuejs"],
+    "svelte": ["sveltekit"],
+    "python": ["py"],
+    "java": [],
+    "go": ["golang"],
+    "kotlin": [],
+    "swift": [],
+    "fastapi": [],
+    "django": [],
+    "flask": [],
+    "spring": ["spring boot", "springboot"],
+    "kubernetes": ["k8s"],
+    "docker": [],
+    "aws": ["amazon web services"],
+    "gcp": ["google cloud", "google cloud platform"],
+    "azure": ["microsoft azure"],
+    "postgresql": ["postgres", "postgre"],
+    "mysql": [],
+    "mongodb": ["mongo"],
+    "redis": [],
+    "kafka": [],
+    "spark": ["apache spark"],
+    "airflow": ["apache airflow"],
+    "hadoop": [],
+    "terraform": ["tf"],
+    "graphql": ["gql"],
+    "rest": ["rest api", "restful"],
+    "ci/cd": ["cicd", "ci-cd", "continuous integration", "continuous delivery"],
+}
+
+# light clusters for rollups (optional UI use)
+CLUSTERS = {
+    "frontend frameworks": ["react", "next.js", "vue", "svelte"],
+    "cloud": ["aws", "gcp", "azure"],
+    "datastores": ["postgresql", "mysql", "mongodb", "redis"],
+    "data eng": ["kafka", "spark", "airflow", "hadoop"],
+}

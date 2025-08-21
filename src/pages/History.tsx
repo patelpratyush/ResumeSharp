@@ -6,25 +6,51 @@ import { Input } from "@/components/ui/input";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 
-const rows = [
-  { id: "v1", created: "2024-09-01", ats: 68, coverage: 72, title: "Senior Frontend Engineer" },
-  { id: "v2", created: "2024-10-12", ats: 73, coverage: 80, title: "Staff Engineer" },
-];
+type AnalysisHistory = {
+  id: string;
+  job_title: string;
+  company_name: string;
+  score: number;
+  matched: string[];
+  missing: string[];
+  created_at: string;
+};
 
 export default function History() {
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<typeof rows[number] | null>(null);
+  const [active, setActive] = useState<AnalysisHistory | null>(null);
+  const [analyses, setAnalyses] = useState<AnalysisHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => rows.filter(r =>
-    r.title.toLowerCase().includes(query.toLowerCase()) &&
-    (!from || r.created >= from) &&
-    (!to || r.created <= to)
-  ), [query, from, to]);
+  // Load analysis history from localStorage
+  useEffect(() => {
+    try {
+      const history = localStorage.getItem('analysis-history');
+      if (history) {
+        setAnalyses(JSON.parse(history));
+      }
+    } catch (error) {
+      console.error('Failed to load analysis history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!analyses) return [];
+    return analyses.filter(analysis =>
+      analysis.job_title.toLowerCase().includes(query.toLowerCase()) &&
+      (!from || analysis.created_at >= from) &&
+      (!to || analysis.created_at <= to)
+    );
+  }, [analyses, query, from, to]);
 
   return (
     <div className="container py-6 space-y-6">
@@ -50,7 +76,22 @@ export default function History() {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between py-2">
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-12" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 space-y-4">
               <div className="flex justify-center">
                 <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-muted-foreground">
@@ -58,7 +99,9 @@ export default function History() {
                   <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.5"/>
                 </svg>
               </div>
-              <div className="text-muted-foreground">No versions yet. Create one from Upload.</div>
+              <div className="text-muted-foreground">
+                {analyses && analyses.length > 0 ? "No analyses match your filters." : "No analysis history yet. Create one from Upload."}
+              </div>
               <Button asChild className="hover-scale">
                 <Link to="/upload">Go to Upload</Link>
               </Button>
@@ -68,29 +111,37 @@ export default function History() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-muted-foreground">
-                    <th className="py-2">Version ID</th>
+                    <th className="py-2">Job Title</th>
+                    <th className="py-2">Company</th>
                     <th className="py-2">Created</th>
-                    <th className="py-2">ATS score</th>
-                    <th className="py-2">Coverage</th>
-                    <th className="py-2">Exports</th>
+                    <th className="py-2">Score</th>
+                    <th className="py-2">Match %</th>
                     <th className="py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className="border-b last:border-0 hover:bg-muted/40 cursor-pointer" onClick={() => { setActive(r); setOpen(true); }}>
-                      <td className="py-2 font-medium">{r.id}</td>
-                      <td className="py-2">{r.created}</td>
-                      <td className="py-2"><Badge>{r.ats}</Badge></td>
-                      <td className="py-2"><Badge variant="secondary">{r.coverage}%</Badge></td>
-                      <td className="py-2 space-x-2">
-                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); console.log("export", r.id, "pdf"); }}>PDF</Button>
-                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); console.log("export", r.id, "docx"); }}>DOCX</Button>
-                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); console.log("export", r.id, "tex"); }}>LaTeX</Button>
+                  {filtered.map((analysis) => (
+                    <tr key={analysis.id} className="border-b last:border-0 hover:bg-muted/40 cursor-pointer" onClick={() => { setActive(analysis); setOpen(true); }}>
+                      <td className="py-2 font-medium">{analysis.job_title}</td>
+                      <td className="py-2 text-muted-foreground">{analysis.company_name || '—'}</td>
+                      <td className="py-2">{new Date(analysis.created_at).toLocaleDateString()}</td>
+                      <td className="py-2">
+                        <Badge variant={analysis.results.score >= 80 ? "default" : analysis.results.score >= 60 ? "secondary" : "outline"}>
+                          {analysis.results.score}%
+                        </Badge>
+                      </td>
+                      <td className="py-2">
+                        <Badge variant="secondary">
+                          {analysis.results.sections?.skillsCoveragePct || 0}%
+                        </Badge>
                       </td>
                       <td className="py-2 space-x-2">
-                        <Button size="sm" onClick={(e) => { e.stopPropagation(); console.log("view diff", r.id); }}>View Diff</Button>
-                        <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); console.log("restore", r.id); }}>Restore</Button>
+                        <Button size="sm" onClick={(e) => { e.stopPropagation(); console.log("view details", analysis.id); }}>
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); console.log("re-analyze", analysis.id); }}>
+                          Re-analyze
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -108,13 +159,98 @@ export default function History() {
             <DrawerTitle>Version details</DrawerTitle>
           </DrawerHeader>
           {active && (
-            <div className="px-4 pb-6">
+            <div className="px-4 pb-6 space-y-4">
+              <div className="space-y-2">
+                <div>
+                  <h3 className="font-semibold">{active.job_title}</h3>
+                  {active.company_name && (
+                    <div className="text-sm text-muted-foreground">{active.company_name}</div>
+                  )}
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(active.created_at).toLocaleString()}
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{active.results.score}%</div>
+                    <div className="text-xs text-muted-foreground">Overall Score</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{active.results.matched?.length || 0}</div>
+                    <div className="text-xs text-muted-foreground">Skills Matched</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{active.results.missing?.length || 0}</div>
+                    <div className="text-xs text-muted-foreground">Skills Missing</div>
+                  </div>
+                </div>
+              </div>
+              
               <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="json">
-                  <AccordionTrigger>JSON preview</AccordionTrigger>
+                <AccordionItem value="matched">
+                  <AccordionTrigger>Matched Skills ({active.results.matched?.length || 0})</AccordionTrigger>
                   <AccordionContent>
-                    <pre className="text-xs whitespace-pre-wrap">
-{JSON.stringify(active, null, 2)}
+                    <div className="flex flex-wrap gap-2">
+                      {active.results.matched?.map((skill) => (
+                        <Badge key={skill} variant="default" className="text-xs">
+                          {skill}
+                        </Badge>
+                      )) || <div className="text-sm text-muted-foreground">No matched skills</div>}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="missing">
+                  <AccordionTrigger>Missing Skills ({active.results.missing?.length || 0})</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-wrap gap-2">
+                      {active.results.missing?.map((skill) => (
+                        <Badge key={skill} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      )) || <div className="text-sm text-muted-foreground">No missing skills</div>}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="sections">
+                  <AccordionTrigger>Section Breakdown</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Skills Coverage</span>
+                        <span>{active.results.sections?.skillsCoveragePct || 0}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Preferred Coverage</span>
+                        <span>{active.results.sections?.preferredCoveragePct || 0}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Domain Coverage</span>
+                        <span>{active.results.sections?.domainCoveragePct || 0}%</span>
+                      </div>
+                      {active.results.sections?.recencyScorePct && (
+                        <div className="flex justify-between">
+                          <span>Recency Score</span>
+                          <span>{active.results.sections.recencyScorePct}%</span>
+                        </div>
+                      )}
+                      {active.results.sections?.hygieneScorePct && (
+                        <div className="flex justify-between">
+                          <span>Hygiene Score</span>
+                          <span>{active.results.sections.hygieneScorePct}%</span>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="raw">
+                  <AccordionTrigger>Raw Data</AccordionTrigger>
+                  <AccordionContent>
+                    <pre className="text-xs whitespace-pre-wrap bg-muted p-3 rounded">
+{JSON.stringify(active.results, null, 2)}
                     </pre>
                   </AccordionContent>
                 </AccordionItem>

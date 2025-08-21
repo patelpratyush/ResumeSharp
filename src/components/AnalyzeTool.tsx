@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { AnalyzeResp, apiAnalyze, apiParse, JD, Resume } from "@/lib/api";
+import { AnalyzeResp, apiAnalyze, apiAnalyzeCanonical, CanonicalAnalyzeResp, apiParse, JD, Resume } from "@/lib/api";
 import React, { useMemo, useState } from "react";
 import RewriteDrawer from "./RewriteDrawer";
 import { apiParseUpload, apiExportDocx } from "@/lib/api";
@@ -12,7 +12,7 @@ import { copyToClipboard, resumeToPlainText } from "@/lib/format";
 import HeatmapTable from "./HeatmapTable";
 import ATSChips from "./ATSChips";
 
-type ParseState = { resume?: Resume; jd?: JD; analysis?: AnalyzeResp };
+type ParseState = { resume?: Resume; jd?: JD; analysis?: AnalyzeResp; canonicalAnalysis?: CanonicalAnalyzeResp };
 
 export default function AnalyzeTool() {
     const [jdText, setJdText] = useState("Software Engineer\nResponsibilities:\n• Build APIs\nRequirements:\n- Python, FastAPI\nPreferred:\n- React");
@@ -39,14 +39,60 @@ export default function AnalyzeTool() {
     async function analyze() {
         setLoading(true);
         try {
-            const jdParsed = (await apiParse("jd", jdText + `\n${title ? `\n${title}\n` : ""}`)).parsed as JD;
+            const jdContent = jdText + `\n${title ? `\n${title}\n` : ""}`;
+            console.log("JD text being parsed:", jdContent);
+            const jdParsed = (await apiParse("jd", jdContent)).parsed as JD;
+            console.log("JD parsed result:", jdParsed);
             // force title if user typed it separately
             if (title) jdParsed.title = title;
 
+            console.log("Resume text being parsed:", resumeText);
             const resumeParsed = (await apiParse("resume", resumeText)).parsed as Resume;
+            console.log("Resume parsed result:", resumeParsed);
 
-            const analysis = await apiAnalyze(resumeParsed, jdParsed);
-            setState({ jd: jdParsed, resume: resumeParsed, analysis });
+            // Use canonical API since backend returns canonical format
+            console.log("Sending to backend:", { resume: resumeParsed, jd: jdParsed });
+            const canonicalAnalysis = await apiAnalyzeCanonical(resumeParsed, jdParsed);
+            console.log("Received from backend:", canonicalAnalysis);
+            
+            // Create a legacy-compatible analysis object for the UI
+            const legacyAnalysis: AnalyzeResp = {
+                analysis_id: "canonical-" + Date.now(),
+                score: canonicalAnalysis.score,
+                coverage: {
+                    present: canonicalAnalysis.matched,
+                    missing: canonicalAnalysis.missing.map(skill => ({ term: skill, weight: 1 }))
+                },
+                metrics: {
+                    coreSkill: canonicalAnalysis.sections.skillsCoveragePct,
+                    verbs: canonicalAnalysis.sections.domainCoveragePct, // Use domain as verb proxy
+                    hygiene: 85 // Default good hygiene score
+                },
+                heatmap: [
+                    // Create heatmap from matched and missing skills
+                    ...canonicalAnalysis.matched.map(skill => ({
+                        term: skill,
+                        in_resume: true,
+                        occurrences: 1
+                    })),
+                    ...canonicalAnalysis.missing.map(skill => ({
+                        term: skill,
+                        in_resume: false,
+                        occurrences: 0
+                    }))
+                ],
+                suggestions: {
+                    "missing_skills": canonicalAnalysis.missing,
+                    "matched_skills": canonicalAnalysis.matched
+                },
+                ats: {
+                    score: 85,
+                    flags: []
+                },
+                hygiene_flags: []
+            };
+            
+            setState({ jd: jdParsed, resume: resumeParsed, analysis: legacyAnalysis, canonicalAnalysis });
         } catch (e) {
             console.error(e);
             alert("Analyze failed. Check console.");
@@ -349,18 +395,18 @@ export default function AnalyzeTool() {
                             </div>
                         </CardTitle>
                         <div className="text-sm text-muted-foreground flex items-center gap-4 mt-2">
-                            <span>Core Skills: {state.analysis.metrics.coreSkill}%</span>
+                            <span>Core Skills: {state.analysis.metrics?.coreSkill || 0}%</span>
                             <span>•</span>
-                            <span>Action Verbs: {state.analysis.metrics.verbs}%</span>
+                            <span>Action Verbs: {state.analysis.metrics?.verbs || 0}%</span>
                             <span>•</span>
-                            <span>ATS Hygiene: {state.analysis.metrics.hygiene}%</span>
+                            <span>ATS Hygiene: {state.analysis.metrics?.hygiene || 0}%</span>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                             <div className="text-sm font-medium">Present</div>
                             <div className="flex flex-wrap gap-2">
-                                {state.analysis.coverage.present.map((t) => (
+                                {(state.analysis.coverage?.present || []).map((t) => (
                                     <Badge key={t} variant="outline">{t}</Badge>
                                 ))}
                             </div>
@@ -368,7 +414,7 @@ export default function AnalyzeTool() {
                         <div className="space-y-2">
                             <div className="text-sm font-medium">Missing</div>
                             <div className="flex flex-wrap gap-2">
-                                {state.analysis.coverage.missing.map((m) => (
+                                {(state.analysis.coverage?.missing || []).map((m) => (
                                     <Badge
                                         key={m.term}
                                         className="bg-amber-100 text-amber-900 cursor-pointer"
@@ -425,7 +471,7 @@ export default function AnalyzeTool() {
                                                          <div className="rounded-xl bg-muted/30 p-4 backdrop-blur transition-all duration-200 hover:bg-muted/40">{b}</div>
                                                         <div className="mt-2">
                                                             <RewriteDrawer
-                                                                analysisId={state.analysis.analysis_id}
+                                                                analysisId={state.analysis?.analysis_id || ""}
                                                                 jdKeywords={jdKeywords}
                                                                 bullet={b}
                                                                 onAccept={(rew) => updateBullet(roleIdx, bulletIdx, rew)}
@@ -455,7 +501,7 @@ export default function AnalyzeTool() {
                                                          <div className="rounded-xl bg-muted/30 p-4 backdrop-blur transition-all duration-200 hover:bg-muted/40">{b}</div>
                                                         <div className="mt-2">
                                                             <RewriteDrawer
-                                                                analysisId={state.analysis!.analysis_id}
+                                                                analysisId={state.analysis?.analysis_id || ""}
                                                                 jdKeywords={jdKeywords}
                                                                 bullet={b}
                                                                 onAccept={(rew) => {
@@ -527,7 +573,7 @@ export default function AnalyzeTool() {
                             if (!bullet) return null;
                             return (
                                 <RewriteDrawer
-                                    analysisId={state.analysis!.analysis_id}
+                                    analysisId={state.analysis?.analysis_id || ""}
                                     jdKeywords={jdKeywords}
                                     bullet={bullet}
                                     initialOpen
