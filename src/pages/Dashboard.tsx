@@ -62,12 +62,12 @@ export default function Dashboard() {
     }, {} as Record<string, number>);
     
     const topMissingSkills = Object.entries(missingCounts)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
       .slice(0, 10)
       .map(([skill]) => skill);
       
     const topMatchedSkills = Object.entries(matchedCounts)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
       .slice(0, 10)
       .map(([skill]) => skill);
     

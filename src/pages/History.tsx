@@ -18,6 +18,18 @@ type AnalysisHistory = {
   matched: string[];
   missing: string[];
   created_at: string;
+  results: {
+    score: number;
+    matched?: string[];
+    missing?: string[];
+    sections?: {
+      skillsCoveragePct?: number;
+      preferredCoveragePct?: number;
+      domainCoveragePct?: number;
+      recencyScorePct?: number;
+      hygieneScorePct?: number;
+    };
+  };
 };
 
 export default function History() {
