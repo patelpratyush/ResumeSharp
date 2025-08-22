@@ -27,38 +27,45 @@ class SubscriptionService:
         success_url: str = None,
         cancel_url: str = None
     ) -> Dict[str, Any]:
-        """Create Stripe checkout session for subscription"""
+        """Create Stripe checkout session for subscription with monthly/yearly options"""
         plan_config = get_plan_config(plan_tier)
         
-        # Get the appropriate price ID
-        price_id = (
-            plan_config["stripe_price_id_yearly"] 
-            if billing_cycle == "yearly" 
-            else plan_config["stripe_price_id_monthly"]
-        )
+        # Get both price IDs for the plan
+        monthly_price_id = plan_config["stripe_price_id_monthly"]
+        yearly_price_id = plan_config["stripe_price_id_yearly"]
         
-        if not price_id:
-            raise ValueError(f"No Stripe price ID configured for {plan_tier.value} {billing_cycle}")
+        if not monthly_price_id or not yearly_price_id:
+            raise ValueError(f"Missing Stripe price IDs for {plan_tier.value} plan")
         
         try:
             # Create or retrieve customer
             customer = await self._get_or_create_stripe_customer(user_id)
             
-            # Create checkout session
+            # Use the selected billing cycle as default, but configure for switching
+            primary_price_id = monthly_price_id if billing_cycle == "monthly" else yearly_price_id
+            
+            # Create checkout session with selected billing cycle
             session = stripe.checkout.Session.create(
                 customer=customer.id,
                 payment_method_types=['card'],
                 line_items=[{
-                    'price': price_id,
+                    'price': primary_price_id,
                     'quantity': 1,
                 }],
                 mode='subscription',
-                success_url=success_url or f"{os.getenv('FRONTEND_URL')}/settings?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=cancel_url or f"{os.getenv('FRONTEND_URL')}/settings",
+                success_url=success_url or f"{os.getenv('FRONTEND_URL')}/dashboard?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=cancel_url or f"{os.getenv('FRONTEND_URL')}/pricing?checkout_cancelled=true",
+                allow_promotion_codes=True,
+                billing_address_collection='auto',
+                subscription_data={
+                    'description': f'{plan_tier.value.title()} Plan - {billing_cycle.title()} Billing'
+                },
                 metadata={
                     'user_id': user_id,
                     'plan_tier': plan_tier.value,
                     'billing_cycle': billing_cycle,
+                    'monthly_price_id': monthly_price_id,
+                    'yearly_price_id': yearly_price_id,
                 }
             )
             
@@ -74,21 +81,39 @@ class SubscriptionService:
     async def create_customer_portal_session(self, user_id: str, return_url: str = None) -> str:
         """Create Stripe customer portal session for subscription management"""
         try:
-            # Get customer from database or Stripe
+            print(f"Getting Stripe customer for user: {user_id}")
+            # Get customer from database or Stripe, create if needed
             customer = await self._get_stripe_customer(user_id)
             if not customer:
-                raise ValueError("No Stripe customer found for user")
+                print(f"No existing customer found, creating new one for user: {user_id}")
+                # Create customer if they don't exist
+                try:
+                    customer = await self._get_or_create_stripe_customer(user_id)
+                except Exception as create_error:
+                    print(f"Customer creation failed: {create_error}")
+                    # Check if there's an existing Stripe customer we can use
+                    customer = await self._find_stripe_customer_by_metadata(user_id)
+                    if not customer:
+                        raise create_error
             
+            print(f"Creating billing portal session for customer: {customer.id}")
             # Create portal session
             session = stripe.billing_portal.Session.create(
                 customer=customer.id,
                 return_url=return_url or f"{os.getenv('FRONTEND_URL')}/settings",
             )
             
+            print(f"Portal session created successfully: {session.url}")
             return session.url
             
         except stripe.error.StripeError as e:
+            print(f"Stripe API error: {str(e)}")
             raise Exception(f"Stripe error: {str(e)}")
+        except Exception as e:
+            print(f"General error in create_customer_portal_session: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise Exception(f"Customer portal error: {str(e)}")
     
     async def handle_webhook_event(self, event_data: Dict[str, Any], signature: str) -> bool:
         """Handle Stripe webhook events"""
@@ -122,7 +147,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         response = supabase.table('user_profiles').select('*').eq('id', user_id).single().execute()
@@ -171,7 +196,7 @@ class SubscriptionService:
             from supabase import create_client
             supabase = create_client(
                 os.getenv("SUPABASE_URL"),
-                os.getenv("SUPABASE_ANON_KEY")
+                os.getenv("SUPABASE_SERVICE_ROLE_KEY")
             )
             
             supabase.table('user_profiles').update({
@@ -210,7 +235,7 @@ class SubscriptionService:
             from supabase import create_client
             supabase = create_client(
                 os.getenv("SUPABASE_URL"),
-                os.getenv("SUPABASE_ANON_KEY")
+                os.getenv("SUPABASE_SERVICE_ROLE_KEY")
             )
             
             supabase.table('user_profiles').update({
@@ -234,15 +259,39 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Use service role for admin operations
         )
         
-        # Get user data from auth
-        user_response = supabase.auth.admin.get_user_by_id(user_id)
-        if not user_response.user:
-            raise ValueError("User not found")
+        # Get user email - multiple fallback strategies
+        user_email = None
         
-        user_email = user_response.user.email
+        # Strategy 1: Try admin API with service role
+        try:
+            user_response = supabase.auth.admin.get_user_by_id(user_id)
+            if user_response.user and user_response.user.email:
+                user_email = user_response.user.email
+        except Exception as e:
+            print(f"Admin auth failed: {e}")
+        
+        # Strategy 2: Try to get from user_profiles table
+        if not user_email:
+            try:
+                # Try different possible email column names
+                for email_col in ['email', 'user_email', 'contact_email']:
+                    try:
+                        profile_response = supabase.table('user_profiles').select(email_col).eq('id', user_id).single().execute()
+                        if profile_response.data and profile_response.data.get(email_col):
+                            user_email = profile_response.data[email_col]
+                            break
+                    except:
+                        continue
+            except Exception as e:
+                print(f"Profile email lookup failed: {e}")
+        
+        # Strategy 3: Use placeholder email with user ID
+        if not user_email:
+            user_email = f"user-{user_id}@temp.stripe.customer"
+            print(f"Warning: Using placeholder email for user {user_id}")
         
         # Create new Stripe customer
         customer = stripe.Customer.create(
@@ -251,10 +300,30 @@ class SubscriptionService:
         )
         
         # Save customer ID to database
-        supabase.table('user_profiles').upsert({
-            'id': user_id,
-            'stripe_customer_id': customer.id,
-        }).execute()
+        try:
+            # Check if profile exists first
+            existing_profile = supabase.table('user_profiles').select('id, email').eq('id', user_id).execute()
+            
+            if existing_profile.data:
+                # Profile exists, update it (including email if it's null)
+                update_data = {'stripe_customer_id': customer.id}
+                if not existing_profile.data[0].get('email'):
+                    update_data['email'] = user_email
+                
+                supabase.table('user_profiles').update(update_data).eq('id', user_id).execute()
+            else:
+                # Profile doesn't exist, create it
+                supabase.table('user_profiles').insert({
+                    'id': user_id,
+                    'stripe_customer_id': customer.id,
+                    'email': user_email,
+                    'subscription_tier': 'free',
+                    'api_calls_limit': 5,
+                    'api_calls_used': 0,
+                }).execute()
+        except Exception as e:
+            print(f"Warning: Could not save customer ID to database: {e}")
+            # Continue anyway since Stripe customer was created successfully
         
         return customer
     
@@ -263,7 +332,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         response = supabase.table('user_profiles').select('stripe_customer_id').eq('id', user_id).single().execute()
@@ -275,6 +344,17 @@ class SubscriptionService:
                 return None
         
         return None
+    
+    async def _find_stripe_customer_by_metadata(self, user_id: str) -> Optional[stripe.Customer]:
+        """Find Stripe customer by user_id in metadata"""
+        try:
+            customers = stripe.Customer.list(limit=10)
+            for customer in customers.data:
+                if customer.metadata.get('user_id') == user_id:
+                    return customer
+            return None
+        except stripe.error.StripeError:
+            return None
     
     async def _handle_checkout_completed(self, session: Dict[str, Any]):
         """Handle successful checkout completion"""
@@ -289,7 +369,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         plan_config = get_plan_config(PlanTier(plan_tier))
@@ -313,7 +393,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         response = supabase.table('user_profiles').select('*').eq('stripe_customer_id', customer_id).single().execute()
@@ -339,7 +419,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         free_plan = get_plan_config(PlanTier.FREE)
@@ -362,7 +442,7 @@ class SubscriptionService:
         from supabase import create_client
         supabase = create_client(
             os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_ANON_KEY")
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         supabase.table('user_profiles').update({
@@ -383,6 +463,7 @@ class SubscriptionService:
         price_id = subscription['items']['data'][0]['price']['id']
         
         # Map price IDs to plan tiers
+        from ..config import SUBSCRIPTION_PLANS
         for tier, config in SUBSCRIPTION_PLANS.items():
             if (config.get('stripe_price_id_monthly') == price_id or 
                 config.get('stripe_price_id_yearly') == price_id):

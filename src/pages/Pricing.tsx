@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,25 @@ export default function Pricing() {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Check for URL parameters and auto-configure page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Check for signup cancellation
+    if (params.get('signup_cancelled') === 'true') {
+      toast({
+        title: "Checkout Cancelled",
+        description: "You can still upgrade to a paid plan anytime from this page.",
+        variant: "default",
+      });
+    }
+    
+    // Clean up URL after processing
+    if (params.toString()) {
+      window.history.replaceState({}, '', '/pricing');
+    }
+  }, [toast]);
 
   const handleSelectPlan = async (planTier: PlanTier) => {
     if (!user) {
@@ -202,6 +221,7 @@ export default function Pricing() {
           );
         })}
       </div>
+
 
       {/* FAQ or Additional Info */}
       <div className="max-w-4xl mx-auto mt-16">

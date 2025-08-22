@@ -90,7 +90,25 @@ async function safeFetch(
   const headers = new Headers(options.headers);
   headers.set('X-Request-ID', requestId);
   
-  // Authentication removed - no auth headers needed
+  // Add authentication if required
+  if (requiresAuth) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        headers.set('Authorization', `Bearer ${session.access_token}`);
+      } else {
+        throw new Error('No authentication token available');
+      }
+    } catch (error) {
+      throw new Error('Authentication required but not available');
+    }
+  }
   
   const requestOptions: RequestInit = {
     ...options,
@@ -196,7 +214,7 @@ export async function apiAnalyzeCanonical(resume: Resume, jd: JD) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resume, jd }),
-    }, { timeout: 45000 }) // Longer timeout for analysis
+    }, { timeout: 45000, requiresAuth: true }) // Longer timeout for analysis, requires auth
   );
 }
 
@@ -220,7 +238,7 @@ export async function apiRewrite(
         text,
         constraints: { jd_keywords: jdKeywords, max_words: maxWords },
       }),
-    }, { timeout: 60000, retries: 1 }) // Longer timeout, fewer retries
+    }, { timeout: 60000, retries: 1, requiresAuth: true }) // Longer timeout, fewer retries, requires auth
   );
 }
 
@@ -232,7 +250,7 @@ export async function apiParseUpload(kind: "resume" | "jd", file: File) {
     await safeFetch(`${base}/api/parse-upload`, { 
       method: "POST", 
       body: fd 
-    }, { timeout: 45000 }) // Longer timeout for file processing
+    }, { timeout: 45000, requiresAuth: true }) // Longer timeout for file processing, requires auth
   );
 }
 
@@ -241,7 +259,7 @@ export async function apiExportDocx(resume: Resume) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(resume),
-  }, { timeout: 30000 });
+  }, { timeout: 30000, requiresAuth: true });
   
   if (!res.ok) {
     let errorMessage = `HTTP ${res.status}`;

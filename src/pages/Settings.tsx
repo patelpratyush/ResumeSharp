@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { Crown, Trash2, CreditCard, RotateCcw, Users, Calendar, RefreshCw } from "lucide-react";
+import { Crown, Trash2, CreditCard, RotateCcw, Users, Calendar, RefreshCw, Zap, Eye } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type UserProfile = Tables<'user_profiles'>;
@@ -216,14 +216,58 @@ export default function Settings() {
     if (!user) return;
 
     try {
-      // Clear all user data first
-      await clearAllData();
-      
-      // Delete user profile
-      await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('id', user.id);
+      // Clear non-profile data first (analyses, settings, etc.)
+      try {
+        // Delete user's analyses
+        await supabase
+          .from('analyses')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Delete user's resumes
+        await supabase
+          .from('resumes')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Delete user's rewrite history
+        await supabase
+          .from('rewrite_history')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Delete user settings
+        await supabase
+          .from('user_settings')
+          .delete()
+          .eq('user_id', user.id);
+
+        console.log('Successfully cleared user data tables');
+      } catch (dataError) {
+        console.warn('Some data cleanup failed:', dataError);
+        // Continue anyway
+      }
+
+      // Call backend to delete auth user and profile (backend handles profile deletion)
+      try {
+        const response = await fetch('/api/subscription/user', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend user deletion failed: ${errorText}`);
+        }
+        
+        console.log('Successfully deleted user account from all systems');
+      } catch (backendError) {
+        console.error('Backend deletion failed:', backendError);
+        throw backendError; // Re-throw to show error to user
+      }
 
       setDeleteAccountConfirm(false);
       toast({
@@ -625,15 +669,43 @@ export default function Settings() {
             
             <div className="flex flex-wrap gap-3">
               {userProfile?.subscription_tier === 'Free' ? (
-                <Button onClick={upgradePlan} className="flex items-center gap-2">
-                  <Crown className="w-4 h-4" />
-                  Upgrade Plan
-                </Button>
+                <>
+                  <Button onClick={upgradePlan} className="flex items-center gap-2">
+                    <Crown className="w-4 h-4" />
+                    Upgrade to Pro
+                  </Button>
+                  <Button onClick={() => navigate('/pricing')} variant="outline" className="flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    View All Plans
+                  </Button>
+                </>
+              ) : userProfile?.subscription_tier === 'Pro' ? (
+                <>
+                  <Button onClick={upgradePlan} variant="outline" className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Manage Billing
+                  </Button>
+                  <Button onClick={() => navigate('/pricing')} variant="outline" className="flex items-center gap-2">
+                    <Crown className="w-4 h-4" />
+                    Upgrade to Ultimate
+                  </Button>
+                  <Button 
+                    onClick={() => setCancelSubConfirm(true)} 
+                    variant="outline" 
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Cancel Subscription
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button onClick={upgradePlan} variant="outline" className="flex items-center gap-2">
                     <CreditCard className="w-4 h-4" />
                     Manage Billing
+                  </Button>
+                  <Button onClick={() => navigate('/pricing')} variant="outline" className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    View Plans
                   </Button>
                   <Button 
                     onClick={() => setCancelSubConfirm(true)} 

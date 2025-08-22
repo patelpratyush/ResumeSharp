@@ -80,8 +80,9 @@ export class SubscriptionAPI {
     subscription: SubscriptionStatus;
     usage: UsageInfo;
   }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/status`, {
-      headers: { 'Authorization': `Bearer ${this.getToken()}` }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to fetch subscription status');
     return response.json();
@@ -91,11 +92,12 @@ export class SubscriptionAPI {
     planTier: PlanTier,
     billingCycle: 'monthly' | 'yearly' = 'monthly'
   ): Promise<{ checkout_url: string; session_id: string }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         plan_tier: planTier,
@@ -110,11 +112,12 @@ export class SubscriptionAPI {
   }
 
   async createCustomerPortal(): Promise<{ portal_url: string }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/portal`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         return_url: `${window.location.origin}/settings`
@@ -126,10 +129,11 @@ export class SubscriptionAPI {
   }
 
   async cancelSubscription(): Promise<{ cancelled: boolean; message: string }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/cancel`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -138,10 +142,11 @@ export class SubscriptionAPI {
   }
 
   async reactivateSubscription(): Promise<{ reactivated: boolean; message: string }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/reactivate`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -154,10 +159,11 @@ export class SubscriptionAPI {
     status: string;
     subscription_id?: string;
   }> {
+    const token = await this.getToken();
     const response = await fetch(`${this.baseURL}/verify-session/${sessionId}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -165,10 +171,20 @@ export class SubscriptionAPI {
     return response.json();
   }
 
-  private getToken(): string {
-    // Get token from your auth system
-    // This is a placeholder - implement according to your auth setup
-    return localStorage.getItem('auth_token') || 'test';
+  private async getToken(): Promise<string> {
+    // Get token from Supabase auth
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY
+    );
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('No authentication token available');
+    }
+    
+    return session.access_token;
   }
 }
 

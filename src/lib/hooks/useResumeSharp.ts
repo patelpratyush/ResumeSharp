@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { apiParseUpload, apiAnalyzeCanonical, apiRewrite, type Resume, type JD } from "../api";
 
 type AsyncState<T> = {
   data: T | null;
@@ -29,40 +30,65 @@ function useStubMutation<TInput, TOutput>(impl: (input: TInput) => Promise<TOutp
   return { mutate, ...state };
 }
 
-// Stubs: implement real APIs later (FastAPI /parse, /ai/rewrite, Java /ats/check)
-export function useParseResume<TOut = { text: string; pages: number }>() {
-  return useStubMutation<File, TOut>(async (file) => {
-    // TODO integrate /parse
-    await new Promise((r) => setTimeout(r, 600));
-    return ({ text: `Parsed ${file.name}`, pages: 1 } as unknown) as TOut;
+// Real API implementations
+export function useParseResume() {
+  return useStubMutation<File, Resume>(async (file) => {
+    const result = await apiParseUpload("resume", file);
+    return result.parsed as Resume;
   });
 }
 
-export function useMatchKeywords<TIn extends { resume: string; jd: string }, TOut = { coverage: number; matched: string[]; missing: string[] }>() {
-  return useStubMutation<TIn, TOut>(async (input) => {
-    // TODO integrate /ai/match
-    await new Promise((r) => setTimeout(r, 500));
-    return ({ coverage: 72, matched: ["React", "TypeScript"], missing: ["GraphQL", "Kubernetes"] } as unknown) as TOut;
+export function useMatchKeywords() {
+  return useStubMutation<{ resume: Resume; jd: JD }, { coverage: number; matched: string[]; missing: string[] }>(async (input) => {
+    const result = await apiAnalyzeCanonical(input.resume, input.jd);
+    return {
+      coverage: result.score,
+      matched: result.matched,
+      missing: result.missing
+    };
   });
 }
 
-export function useRunAtsCheck<TIn extends { text: string }, TOut = { score: number; issues: { code: string; severity: "LOW" | "MED" | "HIGH"; message: string }[] }>() {
-  return useStubMutation<TIn, TOut>(async () => {
-    // TODO integrate /ats/check
-    await new Promise((r) => setTimeout(r, 400));
-    return ({ score: 68, issues: [
-      { code: "ATS-001", severity: "HIGH", message: "Missing keywords in summary" },
-      { code: "ATS-010", severity: "MED", message: "Over 2 pages" },
-      { code: "ATS-100", severity: "LOW", message: "Use consistent bullet glyphs" },
-    ] } as unknown) as TOut;
+export function useRunAtsCheck() {
+  return useStubMutation<{ resume: Resume; jd: JD }, { score: number; issues: { code: string; severity: "LOW" | "MED" | "HIGH"; message: string }[] }>(async (input) => {
+    const result = await apiAnalyzeCanonical(input.resume, input.jd);
+    
+    // Convert hygiene flags to ATS issues
+    const issues = (result.hygiene_flags || []).map((flag, index) => ({
+      code: `ATS-${String(index + 1).padStart(3, '0')}`,
+      severity: (index === 0 ? "HIGH" : index === 1 ? "MED" : "LOW") as "LOW" | "MED" | "HIGH",
+      message: flag
+    }));
+    
+    return {
+      score: result.sections.hygieneScorePct || result.score,
+      issues
+    };
   });
 }
 
-export function useRewriteBullets<TIn extends { bullets: string[]; target: string }, TOut = { rewritten: string[] }>() {
-  return useStubMutation<TIn, TOut>(async (input) => {
-    // TODO integrate /ai/rewrite
-    await new Promise((r) => setTimeout(r, 800));
-    return ({ rewritten: input.bullets.map((b) => `Tailored: ${b}`) } as unknown) as TOut;
+export function useRewriteBullets() {
+  return useStubMutation<{ bullets: string[]; target: string; jdKeywords?: string[] }, { rewritten: string[] }>(async (input) => {
+    // Rewrite each bullet individually using the API
+    const rewritten = await Promise.all(
+      input.bullets.map(async (bullet) => {
+        try {
+          const result = await apiRewrite(
+            crypto.randomUUID(), // analysis_id (not used in current implementation)
+            "experience", // section
+            bullet,
+            input.jdKeywords || [],
+            28 // max_words
+          );
+          return result.rewritten;
+        } catch (error) {
+          console.warn('Failed to rewrite bullet, using original:', error);
+          return bullet; // Fallback to original if rewrite fails
+        }
+      })
+    );
+    
+    return { rewritten };
   });
 }
 

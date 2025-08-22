@@ -13,6 +13,7 @@ import Diff from "./pages/Diff";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AnalyzeScreen from "./components/AnalyzeScreen";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/checkout" element={<Checkout />} />
               
               {/* Protected routes */}
               <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}> 

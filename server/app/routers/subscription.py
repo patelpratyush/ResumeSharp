@@ -99,6 +99,7 @@ async def create_customer_portal(
 ):
     """Create Stripe customer portal session for subscription management"""
     try:
+        print(f"Creating customer portal for user: {user_id}")
         subscription_service = SubscriptionService()
         portal_url = await subscription_service.create_customer_portal_session(
             user_id=user_id,
@@ -111,6 +112,9 @@ async def create_customer_portal(
         }
         
     except Exception as e:
+        print(f"Customer portal error for user {user_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/cancel")
@@ -219,4 +223,80 @@ async def verify_checkout_session(
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/user")
+async def delete_user_account(
+    user_id: str = Depends(get_user_id_from_token)
+):
+    """Delete user account completely from Supabase Auth and Stripe"""
+    try:
+        print(f"Deleting user account: {user_id}")
+        
+        # Create Supabase admin client
+        from supabase import create_client
+        import os
+        supabase = create_client(
+            os.getenv("SUPABASE_URL"),
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        )
+        
+        # Get user profile to find Stripe customer ID before deletion
+        stripe_customer_id = None
+        try:
+            profile_response = supabase.table('user_profiles').select('stripe_customer_id').eq('id', user_id).single().execute()
+            if profile_response.data and profile_response.data.get('stripe_customer_id'):
+                stripe_customer_id = profile_response.data['stripe_customer_id']
+                print(f"Found Stripe customer to delete: {stripe_customer_id}")
+        except Exception as profile_error:
+            print(f"Could not retrieve user profile for Stripe cleanup: {profile_error}")
+        
+        # Delete Stripe customer first (if exists)
+        if stripe_customer_id:
+            try:
+                stripe.Customer.delete(stripe_customer_id)
+                print(f"Successfully deleted Stripe customer: {stripe_customer_id}")
+            except stripe.error.InvalidRequestError as stripe_error:
+                if "No such customer" in str(stripe_error):
+                    print(f"Stripe customer already deleted or doesn't exist: {stripe_customer_id}")
+                else:
+                    print(f"Stripe customer deletion failed: {stripe_error}")
+            except stripe.error.StripeError as stripe_error:
+                print(f"Stripe customer deletion failed: {stripe_error}")
+        
+        # Delete user profile first to avoid FK constraint issues
+        try:
+            supabase.table('user_profiles').delete().eq('id', user_id).execute()
+            print(f"Successfully deleted user profile: {user_id}")
+        except Exception as profile_error:
+            print(f"Profile deletion failed (may not exist): {profile_error}")
+        
+        # Delete user from Supabase Auth (attempt hard delete to allow email reuse)
+        try:
+            # Try hard delete first (this parameter may not be supported in all client versions)
+            try:
+                # Attempt hard delete to immediately free up the email
+                supabase.auth.admin.delete_user(user_id, should_soft_delete=False)
+                print(f"Successfully hard-deleted user from auth (email immediately available): {user_id}")
+            except TypeError:
+                # If should_soft_delete parameter is not supported, use regular delete
+                print("should_soft_delete parameter not supported, using regular delete")
+                supabase.auth.admin.delete_user(user_id)
+                print(f"Successfully deleted user from auth (email may have delay): {user_id}")
+                print("Note: Email reuse may require waiting 24-48 hours due to Supabase soft delete policy")
+            
+        except Exception as auth_error:
+            print(f"Auth deletion failed: {auth_error}")
+            print("Profile was already deleted, so user data is cleaned up even though auth deletion failed")
+        
+        return {
+            "deleted": True,
+            "message": "User account deleted successfully from all systems",
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"User deletion error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

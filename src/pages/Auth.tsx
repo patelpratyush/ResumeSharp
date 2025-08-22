@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from "sonner";
 import ThemeToggle from "@/components/ThemeToggle";
+import { PLAN_FEATURES, PLAN_PRICES, subscriptionAPI, type PlanTier } from '@/lib/subscription';
+import { Check, Crown, Zap, Users } from 'lucide-react';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -25,8 +27,11 @@ export default function Auth() {
     password: "",
     confirmPassword: "",
     firstName: "",
-    lastName: ""
+    lastName: "",
+    selectedPlan: "free" as "free" | "pro" | "ultimate"
   });
+  
+  const [showPlanSelection, setShowPlanSelection] = useState(false);
   
   const [signInData, setSignInData] = useState({
     email: "",
@@ -36,12 +41,27 @@ export default function Auth() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to dashboard
-        if (session?.user) {
+        // Handle new user with paid plan selection
+        if (event === 'SIGNED_IN' && session?.user) {
+          const selectedPlan = session.user.user_metadata?.selected_plan;
+          
+          if (selectedPlan && selectedPlan !== 'free') {
+            // For paid plans, redirect to checkout page with monthly/yearly options
+            toast.success(`Welcome! Choose your ${selectedPlan} plan billing cycle...`);
+            
+            // Navigate to checkout page with plan and user info
+            navigate(`/checkout?plan=${selectedPlan}&email=${encodeURIComponent(session.user.email || '')}&user_id=${session.user.id}`);
+            return;
+          } else {
+            // For free plan, just welcome them and go to dashboard
+            toast.success('Welcome to ResumeSharp!');
+          }
+          
+          // Regular redirect to dashboard (for free plan)
           navigate('/dashboard');
         }
       }
@@ -61,28 +81,38 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handlePlanSelection = (plan: "free" | "pro" | "ultimate") => {
+    setSignUpData(prev => ({ ...prev, selectedPlan: plan }));
+    setShowPlanSelection(false);
+  };
+
+  const handleSignUpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    // Validate passwords match
+    // Validate form
     if (signUpData.password !== signUpData.confirmPassword) {
       setError("Passwords do not match");
-      setLoading(false);
       return;
     }
 
     if (signUpData.password.length < 6) {
       setError("Password must be at least 6 characters");
-      setLoading(false);
       return;
     }
+
+    // Show plan selection
+    setShowPlanSelection(true);
+  };
+
+  const handleSignUp = async () => {
+    setLoading(true);
+    setError("");
 
     const redirectUrl = `${window.location.origin}/dashboard`;
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
         options: {
@@ -90,7 +120,8 @@ export default function Auth() {
           data: {
             first_name: signUpData.firstName,
             last_name: signUpData.lastName,
-            full_name: `${signUpData.firstName} ${signUpData.lastName}`.trim()
+            full_name: `${signUpData.firstName} ${signUpData.lastName}`.trim(),
+            selected_plan: signUpData.selectedPlan
           }
         }
       });
@@ -98,15 +129,27 @@ export default function Auth() {
       if (error) {
         if (error.message.includes("already registered")) {
           setError("This email is already registered. Try signing in instead.");
+        } else if (error.message.includes("email address not authorized")) {
+          setError("This email was recently used for a deleted account. Please wait 24-48 hours or use a different email address.");
+        } else if (error.message.includes("User already registered")) {
+          setError("This email was recently used for a deleted account. Please wait 24-48 hours or use a different email address.");
         } else {
           setError(error.message);
         }
+        setShowPlanSelection(false);
       } else {
-        toast.success("Please check your email to confirm your account");
+        // If they selected a paid plan, redirect to checkout after email confirmation
+        if (signUpData.selectedPlan !== "free") {
+          toast.success("Account created! Check your email to confirm, then you'll be redirected to checkout.");
+        } else {
+          toast.success("Please check your email to confirm your account");
+        }
+        setShowPlanSelection(false);
       }
     } catch (err: any) {
       setError("An unexpected error occurred");
       console.error("Sign up error:", err);
+      setShowPlanSelection(false);
     } finally {
       setLoading(false);
     }
@@ -215,7 +258,8 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                {!showPlanSelection ? (
+                <form onSubmit={handleSignUpSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2">
                       <Label htmlFor="signup-firstname">First Name</Label>
@@ -277,9 +321,112 @@ export default function Auth() {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? "Creating account..." : "Continue to Plan Selection"}
                   </Button>
                 </form>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-2">Choose Your Plan</h3>
+                      <p className="text-sm text-muted-foreground">Select the plan that best fits your needs</p>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {/* Free Plan */}
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-primary/50 ${
+                          signUpData.selectedPlan === 'free' ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => setSignUpData(prev => ({ ...prev, selectedPlan: 'free' }))}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-gray-600" />
+                            <div>
+                              <h4 className="font-medium">Free</h4>
+                              <p className="text-sm text-muted-foreground">Perfect for getting started</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold">$0</div>
+                            <div className="text-xs text-muted-foreground">forever</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          5 API calls/month • Basic features
+                        </div>
+                      </div>
+
+                      {/* Pro Plan */}
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-blue-500/50 ${
+                          signUpData.selectedPlan === 'pro' ? 'border-blue-500 bg-blue-500/5' : ''
+                        }`}
+                        onClick={() => setSignUpData(prev => ({ ...prev, selectedPlan: 'pro' }))}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <h4 className="font-medium">Pro</h4>
+                              <p className="text-sm text-muted-foreground">For serious job seekers</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold">$19</div>
+                            <div className="text-xs text-muted-foreground">per month</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          100 API calls/month • Advanced features • Priority support
+                        </div>
+                      </div>
+
+                      {/* Ultimate Plan */}
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-purple-500/50 ${
+                          signUpData.selectedPlan === 'ultimate' ? 'border-purple-500 bg-purple-500/5' : ''
+                        }`}
+                        onClick={() => setSignUpData(prev => ({ ...prev, selectedPlan: 'ultimate' }))}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-purple-600" />
+                            <div>
+                              <h4 className="font-medium">Ultimate</h4>
+                              <p className="text-sm text-muted-foreground">For power users</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold">$49</div>
+                            <div className="text-xs text-muted-foreground">per month</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          1000 API calls/month • All features • Premium support
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowPlanSelection(false)}
+                        className="flex-1"
+                        disabled={loading}
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        onClick={handleSignUp}
+                        className="flex-1"
+                        disabled={loading}
+                      >
+                        {loading ? "Creating account..." : "Create Account"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
